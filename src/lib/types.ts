@@ -1,6 +1,10 @@
 export type SprinklerType = "popUp" | "rotor" | "dripLine";
 export type NozzleType = "fixedSpray" | "adjustable" | "mpRotator";
 export type ControllerType = "manualTapTimer" | "digitalTimer" | "smartWifi";
+export type ConnectionType =
+  | "20mmGateValve" | "tap"          // mains
+  | "pumpInWell" | "submersible"     // bore
+  | "unsure" | "";
 
 export interface WizardData {
   // Map step
@@ -14,8 +18,8 @@ export interface WizardData {
   controllerType: ControllerType;
 
   // Details step
-  waterSource: "mains" | "bore" | "tank" | "";
-  tapPoints: number;
+  waterSource: "mains" | "bore" | "other" | "";
+  connectionType: ConnectionType;
 
   // Lead capture
   name: string;
@@ -31,7 +35,7 @@ export const initialWizardData: WizardData = {
   nozzleType: "fixedSpray",
   controllerType: "digitalTimer",
   waterSource: "",
-  tapPoints: 1,
+  connectionType: "",
   name: "",
   email: "",
   phone: "",

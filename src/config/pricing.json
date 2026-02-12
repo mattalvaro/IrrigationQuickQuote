@@ -19,6 +19,5 @@
     "smartWifi": { "cost": 450, "label": "Smart Wi-Fi Controller" },
     "label": "Controller/Timer"
   },
-  "tapPoint": { "ratePerPoint": 85, "label": "Pipe & Fittings" },
   "baseCost": 150
 }

@@ -12,14 +12,12 @@ export interface PricingConfig {
   sprinkler: Record<SprinklerType, ProductOption> & { label: string };
   nozzle: Record<NozzleType, ProductOption> & { label: string };
   controller: Record<ControllerType, ProductOption> & { label: string };
-  tapPoint: { ratePerPoint: number; label: string };
   baseCost: number;
 }
 
 export interface QuoteInput {
   lawnAreaSqm: number;
   gardenAreaSqm: number;
-  tapPoints: number;
   sprinklerType: SprinklerType;
   nozzleType: NozzleType;
   controllerType: ControllerType;
@@ -86,14 +84,6 @@ export function calculateQuote(
       label: config.controller.label,
       detail: controllerOption.label,
       amount: controllerOption.cost,
-    });
-  }
-
-  if (input.tapPoints > 0) {
-    lineItems.push({
-      label: config.tapPoint.label,
-      detail: `${input.tapPoints} tap points`,
-      amount: input.tapPoints * config.tapPoint.ratePerPoint,
     });
   }
 

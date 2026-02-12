@@ -22,7 +22,6 @@ const config = {
     smartWifi: { cost: 450, label: "Smart Wi-Fi Controller" },
     label: "Controller/Timer",
   },
-  tapPoint: { ratePerPoint: 85, label: "Pipe & Fittings" },
   baseCost: 150,
 };
 
@@ -32,7 +31,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 120,
         gardenAreaSqm: 40,
-        tapPoints: 2,
         sprinklerType: "popUp",
         nozzleType: "fixedSpray",
         controllerType: "digitalTimer",
@@ -46,10 +44,9 @@ describe("calculateQuote", () => {
       { label: "Sprinkler Type", detail: "Pop-up Sprinklers", amount: 180 },
       { label: "Nozzle Type", detail: "Fixed Spray", amount: 90 },
       { label: "Controller/Timer", detail: "Digital Timer", amount: 250 },
-      { label: "Pipe & Fittings", detail: "2 tap points", amount: 170 },
       { label: "Base Cost", detail: "", amount: 150 },
     ]);
-    expect(result.total).toBe(3060);
+    expect(result.total).toBe(2890);
   });
 
   it("returns zero for lawn when area is 0", () => {
@@ -57,7 +54,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 50,
-        tapPoints: 1,
         sprinklerType: "popUp",
         nozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
@@ -69,8 +65,8 @@ describe("calculateQuote", () => {
       (i) => i.label === "Lawn Irrigation"
     );
     expect(lawnItem).toBeUndefined();
-    // garden 900 + sprinkler 180 + nozzle 90 + controller 0 + tap 85 + base 150
-    expect(result.total).toBe(900 + 180 + 90 + 85 + 150);
+    // garden 900 + sprinkler 180 + nozzle 90 + base 150
+    expect(result.total).toBe(900 + 180 + 90 + 150);
   });
 
   it("omits controller line item when cost is zero (manual tap timer)", () => {
@@ -78,7 +74,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 100,
         gardenAreaSqm: 0,
-        tapPoints: 1,
         sprinklerType: "popUp",
         nozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
@@ -97,7 +92,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        tapPoints: 0,
         sprinklerType: "popUp",
         nozzleType: "fixedSpray",
         controllerType: "smartWifi",
@@ -117,7 +111,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        tapPoints: 0,
         sprinklerType: "popUp",
         nozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
@@ -137,7 +130,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        tapPoints: 0,
         sprinklerType: "rotor",
         nozzleType: "mpRotator",
         controllerType: "manualTapTimer",

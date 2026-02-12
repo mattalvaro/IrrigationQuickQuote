@@ -11,7 +11,7 @@ const mockData: WizardData = {
   nozzleType: "fixedSpray",
   controllerType: "digitalTimer",
   waterSource: "mains",
-  tapPoints: 2,
+  connectionType: "tap",
   name: "",
   email: "",
   phone: "",
@@ -20,8 +20,8 @@ const mockData: WizardData = {
 describe("EstimateStep", () => {
   it("displays the total estimate", () => {
     render(<EstimateStep data={mockData} />);
-    // lawn 1500 + garden 720 + sprinkler 180 + nozzle 90 + controller 250 + tap 170 + base 150 = 3060
-    expect(screen.getByText(/\$3,060/)).toBeInTheDocument();
+    // lawn 1500 + garden 720 + sprinkler 180 + nozzle 90 + controller 250 + base 150 = 2890
+    expect(screen.getByText(/\$2,890/)).toBeInTheDocument();
   });
 
   it("displays line items", () => {

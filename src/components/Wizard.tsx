@@ -56,10 +56,11 @@ export function Wizard() {
         estimate: {
           totalLawn,
           totalGarden,
-          tapPoints: data.tapPoints,
           sprinklerType: data.sprinklerType,
           nozzleType: data.nozzleType,
           controllerType: data.controllerType,
+          waterSource: data.waterSource,
+          connectionType: data.connectionType,
         },
         inputData: data,
         mapSnapshot: data.mapSnapshot,
