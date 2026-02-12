@@ -5,6 +5,7 @@ import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/typ
 import { DetailsStep } from "@/components/DetailsStep";
 import { EstimateStep } from "@/components/EstimateStep";
 import { LeadCaptureStep } from "@/components/LeadCaptureStep";
+import { MapStep } from "@/components/MapStep";
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -16,6 +17,9 @@ export function Wizard() {
   const isLast = stepIndex === STEP_ORDER.length - 1;
 
   function next() {
+    if (currentStep === "map") {
+      window.dispatchEvent(new Event("wizard:beforeNext"));
+    }
     if (!isLast) setStepIndex((i) => i + 1);
   }
 
@@ -55,7 +59,7 @@ export function Wizard() {
 
       <div className="min-h-[300px]">
         {currentStep === "welcome" && <WelcomePlaceholder />}
-        {currentStep === "map" && <p>Map step placeholder</p>}
+        {currentStep === "map" && <MapStep data={data} onUpdate={updateData} />}
         {currentStep === "details" && <DetailsStep data={data} onUpdate={updateData} />}
         {currentStep === "estimate" && <EstimateStep data={data} />}
         {currentStep === "lead" && !submitted && (
