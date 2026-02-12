@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/types";
+import { DetailsStep } from "@/components/DetailsStep";
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -32,7 +33,7 @@ export function Wizard() {
       <div className="min-h-[300px]">
         {currentStep === "welcome" && <WelcomePlaceholder />}
         {currentStep === "map" && <p>Map step placeholder</p>}
-        {currentStep === "details" && <p>Details step placeholder</p>}
+        {currentStep === "details" && <DetailsStep data={data} onUpdate={updateData} />}
         {currentStep === "estimate" && <p>Estimate step placeholder</p>}
         {currentStep === "lead" && <p>Lead capture placeholder</p>}
       </div>
