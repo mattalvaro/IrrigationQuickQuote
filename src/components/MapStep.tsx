@@ -101,6 +101,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         }
       }
       updateAreas();
+      setDrawingMode(null);
     });
     map.on("draw.update", () => updateAreas());
     map.on("draw.delete", (e: { features: Array<{ id: string }> }) => {
@@ -156,6 +157,23 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     }
   }
 
+  function deleteArea(id: string) {
+    if (drawRef.current) {
+      drawRef.current.delete([id]);
+      featureTypes.current.delete(id);
+      updateAreas();
+    }
+  }
+
+  const hasAreas = data.lawnAreas.length > 0 || data.gardenAreas.length > 0;
+
+  const instructionText =
+    drawingMode !== null
+      ? "Click on the map to place points. Double-click to finish the shape."
+      : hasAreas
+        ? "Click 'Draw Lawn' or 'Draw Garden' to add another area."
+        : "Click 'Draw Lawn' or 'Draw Garden' to start measuring an area.";
+
   function captureSnapshot(): string | null {
     if (!mapRef.current) return null;
     return mapRef.current.getCanvas().toDataURL("image/png");
@@ -200,6 +218,10 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         )}
       </div>
 
+      <p className="text-sm text-gray-600" data-testid="map-instructions">
+        {instructionText}
+      </p>
+
       <div className="flex gap-2">
         <button
           type="button"
@@ -241,6 +263,43 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
           <span className="text-orange-700">{totalGarden} m²</span>
         </p>
       </div>
+
+      {hasAreas && (
+        <ul className="space-y-1 text-sm" data-testid="area-list">
+          {data.lawnAreas.map((area, i) => (
+            <li key={area.id} className="flex items-center gap-2">
+              <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                Lawn {i + 1}
+              </span>
+              <span>{area.sqm} m²</span>
+              <button
+                type="button"
+                onClick={() => deleteArea(area.id)}
+                className="text-gray-400 hover:text-red-600 ml-auto"
+                aria-label={`Delete Lawn ${i + 1}`}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+          {data.gardenAreas.map((area, i) => (
+            <li key={area.id} className="flex items-center gap-2">
+              <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                Garden {i + 1}
+              </span>
+              <span>{area.sqm} m²</span>
+              <button
+                type="button"
+                onClick={() => deleteArea(area.id)}
+                className="text-gray-400 hover:text-red-600 ml-auto"
+                aria-label={`Delete Garden ${i + 1}`}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
