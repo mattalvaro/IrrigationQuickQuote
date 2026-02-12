@@ -1,0 +1,7 @@
+{
+  "lawn": { "ratePerSqm": 12.50, "label": "Lawn Irrigation" },
+  "garden": { "ratePerSqm": 18.00, "label": "Garden Irrigation" },
+  "controller": { "manual": 0, "automatic": 250, "label": "Controller/Timer" },
+  "tapPoint": { "ratePerPoint": 85, "label": "Pipe & Fittings" },
+  "baseCost": 150
+}
