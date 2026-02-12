@@ -59,7 +59,7 @@ describe("ProductSelectionStep", () => {
     expect(screen.getByText("Option C")).toBeInTheDocument();
   });
 
-  it("shows price or 'Included' for zero-cost options", () => {
+  it("does not display pricing on cards", () => {
     render(
       <ProductSelectionStep
         title="Pick"
@@ -70,9 +70,9 @@ describe("ProductSelectionStep", () => {
       />
     );
 
-    expect(screen.getByText("+$100")).toBeInTheDocument();
-    expect(screen.getByText("Included")).toBeInTheDocument();
-    expect(screen.getByText("+$250")).toBeInTheDocument();
+    expect(screen.queryByText("+$100")).not.toBeInTheDocument();
+    expect(screen.queryByText("Included")).not.toBeInTheDocument();
+    expect(screen.queryByText("+$250")).not.toBeInTheDocument();
   });
 
   it("calls onSelect when a card is clicked", async () => {

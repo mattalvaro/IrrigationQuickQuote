@@ -55,11 +55,6 @@ export function ProductSelectionStep({
               </div>
               <h3 className="font-medium text-gray-900">{option.label}</h3>
               <p className="text-sm text-gray-500 mt-1">{option.description}</p>
-              <p className="text-sm font-semibold text-blue-600 mt-2">
-                {option.price === 0
-                  ? "Included"
-                  : `+$${option.price}`}
-              </p>
             </button>
           );
         })}
