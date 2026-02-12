@@ -53,9 +53,15 @@ export function Wizard() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <p className="text-sm text-gray-500 mb-4">
-        Step {stepIndex + 1} of {STEP_ORDER.length}
-      </p>
+      <div className="mb-8">
+        <p className="text-sm text-gray-500 mb-2">Step {stepIndex + 1} of {STEP_ORDER.length}</p>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${((stepIndex + 1) / STEP_ORDER.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
       <div className="min-h-[300px]">
         {currentStep === "welcome" && <WelcomePlaceholder />}
