@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/types";
 import { DetailsStep } from "@/components/DetailsStep";
 import { EstimateStep } from "@/components/EstimateStep";
 import { LeadCaptureStep } from "@/components/LeadCaptureStep";
-import { MapStep } from "@/components/MapStep";
+import dynamic from "next/dynamic";
+
+const MapStep = dynamic(() => import("@/components/MapStep").then((m) => m.MapStep), {
+  ssr: false,
+  loading: () => <div className="w-full h-96 bg-gray-100 animate-pulse rounded" />,
+});
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0);
@@ -27,9 +32,9 @@ export function Wizard() {
     if (!isFirst) setStepIndex((i) => i - 1);
   }
 
-  function updateData(partial: Partial<WizardData>) {
+  const updateData = useCallback((partial: Partial<WizardData>) => {
     setData((prev) => ({ ...prev, ...partial }));
-  }
+  }, []);
 
   async function handleSubmit() {
     const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);

@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import mapboxgl from "mapbox-gl";
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import area from "@turf/area";
+import type { Map as MapboxMap, NavigationControl, IControl } from "mapbox-gl";
 import { WizardData } from "@/lib/types";
-import "mapbox-gl/dist/mapbox-gl.css";
-import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+/* global mapboxgl, MapboxDraw */
+declare const mapboxgl: typeof import("mapbox-gl").default;
+declare const MapboxDraw: typeof import("@mapbox/mapbox-gl-draw").default;
 
 type DrawingMode = "lawn" | "garden" | null;
 
@@ -19,8 +17,8 @@ interface MapStepProps {
 
 export function MapStep({ data, onUpdate }: MapStepProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const drawRef = useRef<MapboxDraw | null>(null);
+  const mapRef = useRef<MapboxMap | null>(null);
+  const drawRef = useRef<InstanceType<typeof MapboxDraw> | null>(null);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
   const [address, setAddress] = useState("");
   const [suggestions, setSuggestions] = useState<
@@ -46,7 +44,8 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
     for (const feature of allFeatures.features) {
       const id = feature.id as string;
-      const sqm = Math.round(area(feature));
+      // Calculate area using turf formula inline (avoid npm import issues)
+      const sqm = Math.round(calcArea(feature));
       const type = featureTypes.current.get(id);
 
       if (type === "lawn") lawnAreas.push({ id, sqm });
@@ -56,8 +55,27 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     onUpdate({ lawnAreas, gardenAreas });
   }, [onUpdate]);
 
+  const [scriptReady, setScriptReady] = useState(false);
+
+  // Poll for CDN scripts to be available
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
+    if (typeof window !== "undefined" && typeof (window as any).mapboxgl !== "undefined") {
+      setScriptReady(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      if (typeof (window as any).mapboxgl !== "undefined") {
+        setScriptReady(true);
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!mapContainer.current || mapRef.current || !scriptReady) return;
+
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
@@ -73,7 +91,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
-    map.addControl(draw as unknown as mapboxgl.IControl, "top-left");
+    map.addControl(draw as unknown as IControl, "top-left");
 
     map.on("draw.create", (e: { features: Array<{ id: string }> }) => {
       const currentMode = drawingModeRef.current;
@@ -96,7 +114,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     drawRef.current = draw;
 
     return () => map.remove();
-  }, [updateAreas]);
+  }, [updateAreas, scriptReady]);
 
   async function searchAddress(query: string) {
     setAddress(query);
@@ -104,15 +122,30 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
       setSuggestions([]);
       return;
     }
-    const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&country=au&limit=5`
-    );
-    const json = await res.json();
-    setSuggestions(json.features || []);
+    try {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=au&limit=5&types=address,place`
+      );
+      if (!res.ok) {
+        console.error("Mapbox geocoding failed:", res.status, await res.text());
+        return;
+      }
+      const json = await res.json();
+      setSuggestions(
+        (json.features || []).map((f: { place_name: string; center: [number, number] }) => ({
+          place_name: f.place_name,
+          center: f.center,
+        }))
+      );
+    } catch (err) {
+      console.error("Mapbox geocoding error:", err);
+    }
   }
 
-  function selectAddress(center: [number, number]) {
+  function selectAddress(center: [number, number], placeName: string) {
     setSuggestions([]);
+    setAddress(placeName);
     mapRef.current?.flyTo({ center, zoom: 19 });
   }
 
@@ -157,8 +190,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
                 key={i}
                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                 onClick={() => {
-                  setAddress(s.place_name);
-                  selectAddress(s.center);
+                  selectAddress(s.center, s.place_name);
                 }}
               >
                 {s.place_name}
@@ -211,4 +243,28 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
       </div>
     </div>
   );
+}
+
+/**
+ * Calculate the area of a GeoJSON polygon in square meters.
+ * Simplified spherical excess formula (replaces @turf/area npm dependency).
+ */
+function calcArea(feature: { geometry?: { type?: string; coordinates?: number[][][] } }): number {
+  if (!feature.geometry || feature.geometry.type !== "Polygon" || !feature.geometry.coordinates) {
+    return 0;
+  }
+  const coords = feature.geometry.coordinates[0];
+  if (!coords || coords.length < 4) return 0;
+
+  const RAD = Math.PI / 180;
+  const EARTH_RADIUS = 6371008.8;
+
+  let total = 0;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const [lng1, lat1] = coords[i];
+    const [lng2, lat2] = coords[i + 1];
+    total += (lng2 - lng1) * RAD * (2 + Math.sin(lat1 * RAD) + Math.sin(lat2 * RAD));
+  }
+  total = Math.abs(total * EARTH_RADIUS * EARTH_RADIUS / 2);
+  return total;
 }
