@@ -4,10 +4,12 @@ import { useState } from "react";
 import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/types";
 import { DetailsStep } from "@/components/DetailsStep";
 import { EstimateStep } from "@/components/EstimateStep";
+import { LeadCaptureStep } from "@/components/LeadCaptureStep";
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<WizardData>(initialWizardData);
+  const [submitted, setSubmitted] = useState(false);
 
   const currentStep = STEP_ORDER[stepIndex];
   const isFirst = stepIndex === 0;
@@ -25,6 +27,26 @@ export function Wizard() {
     setData((prev) => ({ ...prev, ...partial }));
   }
 
+  async function handleSubmit() {
+    const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
+    const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
+
+    await fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        estimate: { totalLawn, totalGarden, tapPoints: data.tapPoints, controllerType: data.controllerType },
+        inputData: data,
+        mapSnapshot: data.mapSnapshot,
+      }),
+    });
+
+    setSubmitted(true);
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <p className="text-sm text-gray-500 mb-4">
@@ -36,7 +58,15 @@ export function Wizard() {
         {currentStep === "map" && <p>Map step placeholder</p>}
         {currentStep === "details" && <DetailsStep data={data} onUpdate={updateData} />}
         {currentStep === "estimate" && <EstimateStep data={data} />}
-        {currentStep === "lead" && <p>Lead capture placeholder</p>}
+        {currentStep === "lead" && !submitted && (
+          <LeadCaptureStep data={data} onUpdate={updateData} onSubmit={handleSubmit} />
+        )}
+        {currentStep === "lead" && submitted && (
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
+            <p className="text-gray-600">Your guide price estimate has been sent. A team member will be in touch to confirm.</p>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between mt-6">
