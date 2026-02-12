@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local data
 data/
+
+# widget build output
+/public/widget/
