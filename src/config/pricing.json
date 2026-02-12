@@ -1,7 +1,24 @@
 {
   "lawn": { "ratePerSqm": 12.50, "label": "Lawn Irrigation" },
   "garden": { "ratePerSqm": 18.00, "label": "Garden Irrigation" },
-  "controller": { "manual": 0, "automatic": 250, "label": "Controller/Timer" },
+  "sprinkler": {
+    "popUp": { "cost": 180, "label": "Pop-up Sprinklers" },
+    "rotor": { "cost": 320, "label": "Rotor Sprinklers" },
+    "dripLine": { "cost": 220, "label": "Drip Line" },
+    "label": "Sprinkler Type"
+  },
+  "nozzle": {
+    "fixedSpray": { "cost": 90, "label": "Fixed Spray" },
+    "adjustable": { "cost": 120, "label": "Adjustable" },
+    "mpRotator": { "cost": 180, "label": "MP Rotator" },
+    "label": "Nozzle Type"
+  },
+  "controller": {
+    "manualTapTimer": { "cost": 0, "label": "Manual Tap Timer" },
+    "digitalTimer": { "cost": 250, "label": "Digital Timer" },
+    "smartWifi": { "cost": 450, "label": "Smart Wi-Fi Controller" },
+    "label": "Controller/Timer"
+  },
   "tapPoint": { "ratePerPoint": 85, "label": "Pipe & Fittings" },
   "baseCost": 150
 }

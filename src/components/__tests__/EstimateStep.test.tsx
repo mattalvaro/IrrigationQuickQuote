@@ -7,9 +7,11 @@ const mockData: WizardData = {
   lawnAreas: [{ id: "1", sqm: 120 }],
   gardenAreas: [{ id: "2", sqm: 40 }],
   mapSnapshot: null,
-  waterSource: "city",
+  sprinklerType: "popUp",
+  nozzleType: "fixedSpray",
+  controllerType: "digitalTimer",
+  waterSource: "mains",
   tapPoints: 2,
-  controllerType: "automatic",
   name: "",
   email: "",
   phone: "",
@@ -18,13 +20,16 @@ const mockData: WizardData = {
 describe("EstimateStep", () => {
   it("displays the total estimate", () => {
     render(<EstimateStep data={mockData} />);
-    expect(screen.getByText(/\$2,790/)).toBeInTheDocument();
+    // lawn 1500 + garden 720 + sprinkler 180 + nozzle 90 + controller 250 + tap 170 + base 150 = 3060
+    expect(screen.getByText(/\$3,060/)).toBeInTheDocument();
   });
 
   it("displays line items", () => {
     render(<EstimateStep data={mockData} />);
     expect(screen.getByText(/lawn irrigation/i)).toBeInTheDocument();
     expect(screen.getByText(/garden irrigation/i)).toBeInTheDocument();
+    expect(screen.getByText(/sprinkler type/i)).toBeInTheDocument();
+    expect(screen.getByText(/nozzle type/i)).toBeInTheDocument();
     expect(screen.getByText(/controller/i)).toBeInTheDocument();
   });
 

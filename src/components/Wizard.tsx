@@ -5,6 +5,12 @@ import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/typ
 import { DetailsStep } from "@/components/DetailsStep";
 import { EstimateStep } from "@/components/EstimateStep";
 import { LeadCaptureStep } from "@/components/LeadCaptureStep";
+import { ProductSelectionStep } from "@/components/ProductSelectionStep";
+import {
+  sprinklerOptions,
+  nozzleOptions,
+  controllerOptions,
+} from "@/config/productOptions";
 import dynamic from "next/dynamic";
 
 const MapStep = dynamic(() => import("@/components/MapStep").then((m) => m.MapStep), {
@@ -47,7 +53,14 @@ export function Wizard() {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        estimate: { totalLawn, totalGarden, tapPoints: data.tapPoints, controllerType: data.controllerType },
+        estimate: {
+          totalLawn,
+          totalGarden,
+          tapPoints: data.tapPoints,
+          sprinklerType: data.sprinklerType,
+          nozzleType: data.nozzleType,
+          controllerType: data.controllerType,
+        },
         inputData: data,
         mapSnapshot: data.mapSnapshot,
       }),
@@ -71,6 +84,33 @@ export function Wizard() {
       <div className="min-h-[300px]">
         {currentStep === "welcome" && <WelcomePlaceholder />}
         {currentStep === "map" && <MapStep data={data} onUpdate={updateData} />}
+        {currentStep === "sprinklerType" && (
+          <ProductSelectionStep
+            title="Choose Your Sprinkler Type"
+            description="Select the sprinkler style best suited to your property."
+            options={sprinklerOptions}
+            selectedId={data.sprinklerType}
+            onSelect={(id) => updateData({ sprinklerType: id as WizardData["sprinklerType"] })}
+          />
+        )}
+        {currentStep === "nozzleType" && (
+          <ProductSelectionStep
+            title="Choose Your Nozzle Type"
+            description="Pick the nozzle that matches your watering needs."
+            options={nozzleOptions}
+            selectedId={data.nozzleType}
+            onSelect={(id) => updateData({ nozzleType: id as WizardData["nozzleType"] })}
+          />
+        )}
+        {currentStep === "controllerType" && (
+          <ProductSelectionStep
+            title="Choose Your Controller"
+            description="Select how you want to control your irrigation system."
+            options={controllerOptions}
+            selectedId={data.controllerType}
+            onSelect={(id) => updateData({ controllerType: id as WizardData["controllerType"] })}
+          />
+        )}
         {currentStep === "details" && <DetailsStep data={data} onUpdate={updateData} />}
         {currentStep === "estimate" && <EstimateStep data={data} />}
         {currentStep === "lead" && !submitted && (

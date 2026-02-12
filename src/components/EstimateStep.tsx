@@ -14,6 +14,8 @@ export function EstimateStep({ data }: EstimateStepProps) {
       lawnAreaSqm: totalLawn,
       gardenAreaSqm: totalGarden,
       tapPoints: data.tapPoints,
+      sprinklerType: data.sprinklerType,
+      nozzleType: data.nozzleType,
       controllerType: data.controllerType,
     },
     getDefaultConfig()

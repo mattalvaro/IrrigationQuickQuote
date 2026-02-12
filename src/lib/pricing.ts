@@ -1,9 +1,17 @@
+import type { SprinklerType, NozzleType, ControllerType } from "@/lib/types";
 import pricingConfig from "@/config/pricing.json";
+
+interface ProductOption {
+  cost: number;
+  label: string;
+}
 
 export interface PricingConfig {
   lawn: { ratePerSqm: number; label: string };
   garden: { ratePerSqm: number; label: string };
-  controller: { manual: number; automatic: number; label: string };
+  sprinkler: Record<SprinklerType, ProductOption> & { label: string };
+  nozzle: Record<NozzleType, ProductOption> & { label: string };
+  controller: Record<ControllerType, ProductOption> & { label: string };
   tapPoint: { ratePerPoint: number; label: string };
   baseCost: number;
 }
@@ -12,7 +20,9 @@ export interface QuoteInput {
   lawnAreaSqm: number;
   gardenAreaSqm: number;
   tapPoints: number;
-  controllerType: "manual" | "automatic";
+  sprinklerType: SprinklerType;
+  nozzleType: NozzleType;
+  controllerType: ControllerType;
 }
 
 export interface QuoteLineItem {
@@ -52,12 +62,30 @@ export function calculateQuote(
     });
   }
 
-  const controllerCost = config.controller[input.controllerType];
-  if (controllerCost > 0) {
+  const sprinklerOption = config.sprinkler[input.sprinklerType];
+  if (sprinklerOption.cost > 0) {
+    lineItems.push({
+      label: config.sprinkler.label,
+      detail: sprinklerOption.label,
+      amount: sprinklerOption.cost,
+    });
+  }
+
+  const nozzleOption = config.nozzle[input.nozzleType];
+  if (nozzleOption.cost > 0) {
+    lineItems.push({
+      label: config.nozzle.label,
+      detail: nozzleOption.label,
+      amount: nozzleOption.cost,
+    });
+  }
+
+  const controllerOption = config.controller[input.controllerType];
+  if (controllerOption.cost > 0) {
     lineItems.push({
       label: config.controller.label,
-      detail: input.controllerType === "automatic" ? "Automatic" : "Manual",
-      amount: controllerCost,
+      detail: controllerOption.label,
+      amount: controllerOption.cost,
     });
   }
 

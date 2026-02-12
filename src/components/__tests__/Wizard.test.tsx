@@ -41,7 +41,7 @@ describe("Wizard", () => {
 
   it("shows step progress indicator", () => {
     render(<Wizard />);
-    expect(screen.getByText(/step 1 of 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/step 1 of 8/i)).toBeInTheDocument();
   });
 
   it("navigates to next step when Next is clicked", async () => {
@@ -49,7 +49,7 @@ describe("Wizard", () => {
     render(<Wizard />);
 
     await user.click(screen.getByRole("button", { name: /next/i }));
-    expect(screen.getByText(/step 2 of 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/step 2 of 8/i)).toBeInTheDocument();
   });
 
   it("navigates back when Back is clicked", async () => {
@@ -58,7 +58,7 @@ describe("Wizard", () => {
 
     await user.click(screen.getByRole("button", { name: /next/i }));
     await user.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByText(/step 1 of 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/step 1 of 8/i)).toBeInTheDocument();
   });
 
   it("does not show Back button on first step", () => {

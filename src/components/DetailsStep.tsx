@@ -21,9 +21,9 @@ export function DetailsStep({ data, onUpdate }: DetailsStepProps) {
           className="w-full border border-gray-300 rounded px-3 py-2"
         >
           <option value="">Select...</option>
-          <option value="city">City Water</option>
-          <option value="well">Well</option>
-          <option value="tank">Rain Tank</option>
+          <option value="mains">Mains</option>
+          <option value="bore">Bore</option>
+          <option value="tank">Tank</option>
         </select>
       </div>
 
@@ -42,31 +42,6 @@ export function DetailsStep({ data, onUpdate }: DetailsStepProps) {
         />
       </div>
 
-      <fieldset>
-        <legend className="text-sm font-medium text-gray-700 mb-2">Controller Type</legend>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="controllerType"
-              value="automatic"
-              checked={data.controllerType === "automatic"}
-              onChange={() => onUpdate({ controllerType: "automatic" })}
-            />
-            Automatic
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="controllerType"
-              value="manual"
-              checked={data.controllerType === "manual"}
-              onChange={() => onUpdate({ controllerType: "manual" })}
-            />
-            Manual
-          </label>
-        </div>
-      </fieldset>
     </div>
   );
 }

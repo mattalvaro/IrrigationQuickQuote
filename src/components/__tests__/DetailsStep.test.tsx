@@ -15,10 +15,9 @@ describe("DetailsStep", () => {
     expect(screen.getByLabelText(/tap points/i)).toBeInTheDocument();
   });
 
-  it("renders controller type toggle", () => {
+  it("does not render controller type (moved to its own step)", () => {
     render(<DetailsStep data={initialWizardData} onUpdate={vi.fn()} />);
-    expect(screen.getByLabelText(/automatic/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/manual/i)).toBeInTheDocument();
+    expect(screen.queryByText(/controller type/i)).not.toBeInTheDocument();
   });
 
   it("calls onUpdate when water source changes", async () => {
@@ -26,8 +25,8 @@ describe("DetailsStep", () => {
     const user = userEvent.setup();
     render(<DetailsStep data={initialWizardData} onUpdate={onUpdate} />);
 
-    await user.selectOptions(screen.getByLabelText(/water source/i), "city");
-    expect(onUpdate).toHaveBeenCalledWith({ waterSource: "city" });
+    await user.selectOptions(screen.getByLabelText(/water source/i), "mains");
+    expect(onUpdate).toHaveBeenCalledWith({ waterSource: "mains" });
   });
 
   it("calls onUpdate when tap points changes", async () => {
@@ -43,14 +42,5 @@ describe("DetailsStep", () => {
     const input = screen.getByLabelText(/tap points/i);
     await user.type(input, "3");
     expect(onUpdate).toHaveBeenCalledWith({ tapPoints: 3 });
-  });
-
-  it("calls onUpdate when controller type changes", async () => {
-    const onUpdate = vi.fn();
-    const user = userEvent.setup();
-    render(<DetailsStep data={initialWizardData} onUpdate={onUpdate} />);
-
-    await user.click(screen.getByLabelText(/manual/i));
-    expect(onUpdate).toHaveBeenCalledWith({ controllerType: "manual" });
   });
 });
