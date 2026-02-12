@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f0f0"/>
+  <rect x="150" y="75" width="100" height="130" rx="8" fill="#8B5CF6"/>
+  <rect x="165" y="90" width="70" height="40" rx="4" fill="#1E1B4B"/>
+  <text x="200" y="118" text-anchor="middle" font-family="monospace" font-size="18" font-weight="700" fill="#A78BFA">12:30</text>
+  <circle cx="175" cy="155" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <circle cx="200" cy="155" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <circle cx="225" cy="155" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <circle cx="175" cy="180" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <circle cx="200" cy="180" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <circle cx="225" cy="180" r="8" fill="#6D28D9" stroke="#A78BFA" stroke-width="1.5"/>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#374151">Digital Timer</text>
+</svg>

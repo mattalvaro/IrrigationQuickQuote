@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f0f0"/>
+  <rect x="155" y="100" width="90" height="120" rx="10" fill="#9333EA"/>
+  <rect x="168" y="112" width="64" height="38" rx="4" fill="#1E1B4B"/>
+  <circle cx="200" cy="131" r="3" fill="#A78BFA"/>
+  <path d="M175 88 Q200 65 225 88" fill="none" stroke="#A78BFA" stroke-width="3" stroke-linecap="round"/>
+  <path d="M183 95 Q200 78 217 95" fill="none" stroke="#C4B5FD" stroke-width="3" stroke-linecap="round"/>
+  <path d="M191 102 Q200 91 209 102" fill="none" stroke="#DDD6FE" stroke-width="3" stroke-linecap="round"/>
+  <rect x="170" y="162" width="24" height="10" rx="2" fill="#7C3AED"/>
+  <rect x="206" y="162" width="24" height="10" rx="2" fill="#7C3AED"/>
+  <rect x="170" y="182" width="24" height="10" rx="2" fill="#7C3AED"/>
+  <rect x="206" y="182" width="24" height="10" rx="2" fill="#7C3AED"/>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#374151">Smart WiFi Controller</text>
+</svg>

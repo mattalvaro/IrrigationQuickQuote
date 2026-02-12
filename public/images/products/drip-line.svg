@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f0f0"/>
+  <path d="M100 130 Q150 100 200 130 Q250 160 300 130" stroke="#1D4ED8" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <circle cx="140" cy="148" r="5" fill="#60A5FA"/>
+  <circle cx="200" cy="148" r="5" fill="#60A5FA"/>
+  <circle cx="260" cy="148" r="5" fill="#60A5FA"/>
+  <line x1="140" y1="153" x2="140" y2="175" stroke="#60A5FA" stroke-width="2" stroke-dasharray="4 3"/>
+  <line x1="200" y1="153" x2="200" y2="175" stroke="#60A5FA" stroke-width="2" stroke-dasharray="4 3"/>
+  <line x1="260" y1="153" x2="260" y2="175" stroke="#60A5FA" stroke-width="2" stroke-dasharray="4 3"/>
+  <path d="M137 178 Q140 188 143 178" fill="#60A5FA"/>
+  <path d="M197 178 Q200 188 203 178" fill="#60A5FA"/>
+  <path d="M257 178 Q260 188 263 178" fill="#60A5FA"/>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#374151">Drip Line</text>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f0f0"/>
+  <circle cx="200" cy="125" r="45" fill="none" stroke="#15803D" stroke-width="2.5"/>
+  <line x1="200" y1="125" x2="200" y2="80" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+  <line x1="200" y1="125" x2="235" y2="150" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+  <line x1="200" y1="125" x2="165" y2="150" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="200" cy="125" r="8" fill="#16A34A"/>
+  <circle cx="200" cy="76" r="5" fill="#22C55E"/>
+  <circle cx="238" cy="153" r="5" fill="#22C55E"/>
+  <circle cx="162" cy="153" r="5" fill="#22C55E"/>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#374151">MP Rotator Nozzle</text>
+</svg>
