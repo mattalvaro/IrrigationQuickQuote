@@ -39,9 +39,11 @@ describe("Wizard", () => {
     expect(screen.getByText(/welcome/i)).toBeInTheDocument();
   });
 
-  it("shows step progress indicator", () => {
+  it("shows step progress indicator (no areas drawn = 6 steps)", () => {
     render(<Wizard />);
-    expect(screen.getByText(/step 1 of 8/i)).toBeInTheDocument();
+    // With no lawn/garden areas, sprinkler and nozzle steps are filtered out
+    // welcome, map, controllerType, details, estimate, lead = 6
+    expect(screen.getByText(/step 1 of 6/i)).toBeInTheDocument();
   });
 
   it("navigates to next step when Next is clicked", async () => {
@@ -49,7 +51,7 @@ describe("Wizard", () => {
     render(<Wizard />);
 
     await user.click(screen.getByRole("button", { name: /next/i }));
-    expect(screen.getByText(/step 2 of 8/i)).toBeInTheDocument();
+    expect(screen.getByText(/step 2 of 6/i)).toBeInTheDocument();
   });
 
   it("navigates back when Back is clicked", async () => {
@@ -58,7 +60,7 @@ describe("Wizard", () => {
 
     await user.click(screen.getByRole("button", { name: /next/i }));
     await user.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByText(/step 1 of 8/i)).toBeInTheDocument();
+    expect(screen.getByText(/step 1 of 6/i)).toBeInTheDocument();
   });
 
   it("does not show Back button on first step", () => {

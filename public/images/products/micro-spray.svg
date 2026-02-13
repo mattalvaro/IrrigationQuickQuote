@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f0f0f0"/>
+  <rect x="192" y="160" width="16" height="60" rx="3" fill="#1D4ED8"/>
+  <ellipse cx="200" cy="155" rx="14" ry="8" fill="#1D4ED8"/>
+  <path d="M200 145 L160 90" stroke="#60A5FA" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M200 145 L180 85" stroke="#60A5FA" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M200 145 L200 75" stroke="#60A5FA" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M200 145 L220 85" stroke="#60A5FA" stroke-width="2" stroke-dasharray="3 3"/>
+  <path d="M200 145 L240 90" stroke="#60A5FA" stroke-width="2" stroke-dasharray="3 3"/>
+  <circle cx="160" cy="88" r="4" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="180" cy="83" r="3" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="200" cy="73" r="4" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="220" cy="83" r="3" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="240" cy="88" r="4" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="170" cy="100" r="2" fill="#60A5FA" opacity="0.4"/>
+  <circle cx="190" cy="95" r="2" fill="#60A5FA" opacity="0.4"/>
+  <circle cx="210" cy="95" r="2" fill="#60A5FA" opacity="0.4"/>
+  <circle cx="230" cy="100" r="2" fill="#60A5FA" opacity="0.4"/>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#374151">Micro-spray</text>
+</svg>

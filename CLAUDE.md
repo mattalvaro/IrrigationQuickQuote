@@ -35,7 +35,7 @@
 - Components: named exports in PascalCase files (`ProductSelectionStep.tsx`)
 - Tests: colocated in `__tests__/` directories next to source
 - Pricing: flat add-on costs for products, per-sqm rates for area types — all defined in `pricing.json`
-- Wizard flow: welcome → map → sprinklerType → nozzleType → controllerType → details → estimate → lead (8 steps)
+- Wizard flow: welcome → map → lawnSprinklerType? → gardenSprinklerType? → lawnNozzleType? → gardenNozzleType? → controllerType → details → estimate → lead (10 steps max, conditional on drawn areas and pop-up sprinkler selection)
 
 ## Gotchas
 - `onUpdate` callbacks passed to MapStep MUST be wrapped in `useCallback` or the map reinitializes on every render

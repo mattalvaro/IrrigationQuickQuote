@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { WizardData, initialWizardData, STEP_ORDER, WizardStep } from "@/lib/types";
+import { useState, useCallback, useMemo } from "react";
+import { WizardData, initialWizardData, STEP_ORDER } from "@/lib/types";
 import { DetailsStep } from "@/components/DetailsStep";
 import { EstimateStep } from "@/components/EstimateStep";
 import { LeadCaptureStep } from "@/components/LeadCaptureStep";
 import { ProductSelectionStep } from "@/components/ProductSelectionStep";
 import {
-  sprinklerOptions,
-  nozzleOptions,
+  lawnSprinklerOptions,
+  gardenSprinklerOptions,
+  lawnNozzleOptions,
+  gardenNozzleOptions,
   controllerOptions,
 } from "@/config/productOptions";
 import dynamic from "next/dynamic";
@@ -23,9 +25,19 @@ export function Wizard() {
   const [data, setData] = useState<WizardData>(initialWizardData);
   const [submitted, setSubmitted] = useState(false);
 
-  const currentStep = STEP_ORDER[stepIndex];
+  const activeSteps = useMemo(() => {
+    return STEP_ORDER.filter((step) => {
+      if (step === "lawnSprinklerType") return data.lawnAreas.length > 0;
+      if (step === "gardenSprinklerType") return data.gardenAreas.length > 0;
+      if (step === "lawnNozzleType") return data.lawnAreas.length > 0 && data.lawnSprinklerType === "popUp";
+      if (step === "gardenNozzleType") return data.gardenAreas.length > 0 && data.gardenSprinklerType === "popUp";
+      return true;
+    });
+  }, [data.lawnAreas.length, data.gardenAreas.length, data.lawnSprinklerType, data.gardenSprinklerType]);
+
+  const currentStep = activeSteps[stepIndex];
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === STEP_ORDER.length - 1;
+  const isLast = stepIndex === activeSteps.length - 1;
 
   function next() {
     if (currentStep === "map") {
@@ -56,8 +68,10 @@ export function Wizard() {
         estimate: {
           totalLawn,
           totalGarden,
-          sprinklerType: data.sprinklerType,
-          nozzleType: data.nozzleType,
+          lawnSprinklerType: data.lawnSprinklerType,
+          gardenSprinklerType: data.gardenSprinklerType,
+          lawnNozzleType: data.lawnNozzleType,
+          gardenNozzleType: data.gardenNozzleType,
           controllerType: data.controllerType,
           waterSource: data.waterSource,
           connectionType: data.connectionType,
@@ -73,11 +87,11 @@ export function Wizard() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <div className="mb-8">
-        <p className="text-sm text-gray-500 mb-2">Step {stepIndex + 1} of {STEP_ORDER.length}</p>
+        <p className="text-sm text-gray-500 mb-2">Step {stepIndex + 1} of {activeSteps.length}</p>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((stepIndex + 1) / STEP_ORDER.length) * 100}%` }}
+            style={{ width: `${((stepIndex + 1) / activeSteps.length) * 100}%` }}
           />
         </div>
       </div>
@@ -85,22 +99,40 @@ export function Wizard() {
       <div className="min-h-[300px]">
         {currentStep === "welcome" && <WelcomePlaceholder />}
         {currentStep === "map" && <MapStep data={data} onUpdate={updateData} />}
-        {currentStep === "sprinklerType" && (
+        {currentStep === "lawnSprinklerType" && (
           <ProductSelectionStep
-            title="Choose Your Sprinkler Type"
-            description="Select the sprinkler style best suited to your property."
-            options={sprinklerOptions}
-            selectedId={data.sprinklerType}
-            onSelect={(id) => updateData({ sprinklerType: id as WizardData["sprinklerType"] })}
+            title="Choose Lawn Sprinklers"
+            description="Select the sprinkler style best suited to your lawn areas."
+            options={lawnSprinklerOptions}
+            selectedId={data.lawnSprinklerType}
+            onSelect={(id) => updateData({ lawnSprinklerType: id as WizardData["lawnSprinklerType"] })}
           />
         )}
-        {currentStep === "nozzleType" && (
+        {currentStep === "gardenSprinklerType" && (
           <ProductSelectionStep
-            title="Choose Your Nozzle Type"
-            description="Pick the nozzle that matches your watering needs."
-            options={nozzleOptions}
-            selectedId={data.nozzleType}
-            onSelect={(id) => updateData({ nozzleType: id as WizardData["nozzleType"] })}
+            title="Choose Garden Sprinklers"
+            description="Select the sprinkler style best suited to your garden areas."
+            options={gardenSprinklerOptions}
+            selectedId={data.gardenSprinklerType}
+            onSelect={(id) => updateData({ gardenSprinklerType: id as WizardData["gardenSprinklerType"] })}
+          />
+        )}
+        {currentStep === "lawnNozzleType" && (
+          <ProductSelectionStep
+            title="Choose Lawn Nozzles"
+            description="Pick the nozzle that matches your lawn watering needs."
+            options={lawnNozzleOptions}
+            selectedId={data.lawnNozzleType}
+            onSelect={(id) => updateData({ lawnNozzleType: id as WizardData["lawnNozzleType"] })}
+          />
+        )}
+        {currentStep === "gardenNozzleType" && (
+          <ProductSelectionStep
+            title="Choose Garden Nozzles"
+            description="Pick the nozzle that matches your garden watering needs."
+            options={gardenNozzleOptions}
+            selectedId={data.gardenNozzleType}
+            onSelect={(id) => updateData({ gardenNozzleType: id as WizardData["gardenNozzleType"] })}
           />
         )}
         {currentStep === "controllerType" && (

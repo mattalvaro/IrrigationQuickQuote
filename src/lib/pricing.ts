@@ -1,4 +1,4 @@
-import type { SprinklerType, NozzleType, ControllerType } from "@/lib/types";
+import type { LawnSprinklerType, GardenSprinklerType, NozzleType, ControllerType } from "@/lib/types";
 import pricingConfig from "@/config/pricing.json";
 
 interface ProductOption {
@@ -9,8 +9,10 @@ interface ProductOption {
 export interface PricingConfig {
   lawn: { ratePerSqm: number; label: string };
   garden: { ratePerSqm: number; label: string };
-  sprinkler: Record<SprinklerType, ProductOption> & { label: string };
-  nozzle: Record<NozzleType, ProductOption> & { label: string };
+  lawnSprinkler: Record<LawnSprinklerType, ProductOption> & { label: string };
+  gardenSprinkler: Record<GardenSprinklerType, ProductOption> & { label: string };
+  lawnNozzle: Record<NozzleType, ProductOption> & { label: string };
+  gardenNozzle: Record<NozzleType, ProductOption> & { label: string };
   controller: Record<ControllerType, ProductOption> & { label: string };
   baseCost: number;
 }
@@ -18,8 +20,10 @@ export interface PricingConfig {
 export interface QuoteInput {
   lawnAreaSqm: number;
   gardenAreaSqm: number;
-  sprinklerType: SprinklerType;
-  nozzleType: NozzleType;
+  lawnSprinklerType?: LawnSprinklerType;
+  gardenSprinklerType?: GardenSprinklerType;
+  lawnNozzleType?: NozzleType;
+  gardenNozzleType?: NozzleType;
   controllerType: ControllerType;
 }
 
@@ -60,22 +64,48 @@ export function calculateQuote(
     });
   }
 
-  const sprinklerOption = config.sprinkler[input.sprinklerType];
-  if (sprinklerOption.cost > 0) {
-    lineItems.push({
-      label: config.sprinkler.label,
-      detail: sprinklerOption.label,
-      amount: sprinklerOption.cost,
-    });
+  if (input.lawnSprinklerType) {
+    const lawnSprinklerOption = config.lawnSprinkler[input.lawnSprinklerType];
+    if (lawnSprinklerOption.cost > 0) {
+      lineItems.push({
+        label: config.lawnSprinkler.label,
+        detail: lawnSprinklerOption.label,
+        amount: lawnSprinklerOption.cost,
+      });
+    }
   }
 
-  const nozzleOption = config.nozzle[input.nozzleType];
-  if (nozzleOption.cost > 0) {
-    lineItems.push({
-      label: config.nozzle.label,
-      detail: nozzleOption.label,
-      amount: nozzleOption.cost,
-    });
+  if (input.gardenSprinklerType) {
+    const gardenSprinklerOption = config.gardenSprinkler[input.gardenSprinklerType];
+    if (gardenSprinklerOption.cost > 0) {
+      lineItems.push({
+        label: config.gardenSprinkler.label,
+        detail: gardenSprinklerOption.label,
+        amount: gardenSprinklerOption.cost,
+      });
+    }
+  }
+
+  if (input.lawnNozzleType) {
+    const lawnNozzleOption = config.lawnNozzle[input.lawnNozzleType];
+    if (lawnNozzleOption.cost > 0) {
+      lineItems.push({
+        label: config.lawnNozzle.label,
+        detail: lawnNozzleOption.label,
+        amount: lawnNozzleOption.cost,
+      });
+    }
+  }
+
+  if (input.gardenNozzleType) {
+    const gardenNozzleOption = config.gardenNozzle[input.gardenNozzleType];
+    if (gardenNozzleOption.cost > 0) {
+      lineItems.push({
+        label: config.gardenNozzle.label,
+        detail: gardenNozzleOption.label,
+        amount: gardenNozzleOption.cost,
+      });
+    }
   }
 
   const controllerOption = config.controller[input.controllerType];

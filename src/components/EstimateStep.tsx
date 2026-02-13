@@ -13,8 +13,10 @@ export function EstimateStep({ data }: EstimateStepProps) {
     {
       lawnAreaSqm: totalLawn,
       gardenAreaSqm: totalGarden,
-      sprinklerType: data.sprinklerType,
-      nozzleType: data.nozzleType,
+      lawnSprinklerType: data.lawnAreas.length > 0 ? data.lawnSprinklerType : undefined,
+      gardenSprinklerType: data.gardenAreas.length > 0 ? data.gardenSprinklerType : undefined,
+      lawnNozzleType: data.lawnAreas.length > 0 && data.lawnSprinklerType === "popUp" ? data.lawnNozzleType : undefined,
+      gardenNozzleType: data.gardenAreas.length > 0 && data.gardenSprinklerType === "popUp" ? data.gardenNozzleType : undefined,
       controllerType: data.controllerType,
     },
     getDefaultConfig()

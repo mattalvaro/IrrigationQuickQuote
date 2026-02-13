@@ -1,17 +1,30 @@
 {
   "lawn": { "ratePerSqm": 12.50, "label": "Lawn Irrigation" },
   "garden": { "ratePerSqm": 18.00, "label": "Garden Irrigation" },
-  "sprinkler": {
+  "lawnSprinkler": {
     "popUp": { "cost": 180, "label": "Pop-up Sprinklers" },
     "rotor": { "cost": 320, "label": "Rotor Sprinklers" },
     "dripLine": { "cost": 220, "label": "Drip Line" },
-    "label": "Sprinkler Type"
+    "label": "Lawn Sprinkler Type"
   },
-  "nozzle": {
+  "gardenSprinkler": {
+    "popUp": { "cost": 180, "label": "Pop-up Sprinklers" },
+    "rotor": { "cost": 320, "label": "Rotor Sprinklers" },
+    "dripLine": { "cost": 220, "label": "Drip Line" },
+    "microSpray": { "cost": 150, "label": "Micro-spray" },
+    "label": "Garden Sprinkler Type"
+  },
+  "lawnNozzle": {
     "fixedSpray": { "cost": 90, "label": "Fixed Spray" },
     "adjustable": { "cost": 120, "label": "Adjustable" },
     "mpRotator": { "cost": 180, "label": "MP Rotator" },
-    "label": "Nozzle Type"
+    "label": "Lawn Nozzle Type"
+  },
+  "gardenNozzle": {
+    "fixedSpray": { "cost": 90, "label": "Fixed Spray" },
+    "adjustable": { "cost": 120, "label": "Adjustable" },
+    "mpRotator": { "cost": 180, "label": "MP Rotator" },
+    "label": "Garden Nozzle Type"
   },
   "controller": {
     "manualTapTimer": { "cost": 0, "label": "Manual Tap Timer" },

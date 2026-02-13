@@ -6,7 +6,8 @@ import { WizardData } from "@/lib/types";
 
 /* global mapboxgl, MapboxDraw */
 declare const mapboxgl: typeof import("mapbox-gl").default;
-declare const MapboxDraw: typeof import("@mapbox/mapbox-gl-draw").default;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const MapboxDraw: any;
 
 type DrawingMode = "lawn" | "garden" | null;
 

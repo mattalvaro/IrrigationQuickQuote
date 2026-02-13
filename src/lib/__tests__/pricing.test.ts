@@ -4,17 +4,30 @@ import { calculateQuote } from "@/lib/pricing";
 const config = {
   lawn: { ratePerSqm: 12.5, label: "Lawn Irrigation" },
   garden: { ratePerSqm: 18.0, label: "Garden Irrigation" },
-  sprinkler: {
+  lawnSprinkler: {
     popUp: { cost: 180, label: "Pop-up Sprinklers" },
     rotor: { cost: 320, label: "Rotor Sprinklers" },
     dripLine: { cost: 220, label: "Drip Line" },
-    label: "Sprinkler Type",
+    label: "Lawn Sprinkler Type",
   },
-  nozzle: {
+  gardenSprinkler: {
+    popUp: { cost: 180, label: "Pop-up Sprinklers" },
+    rotor: { cost: 320, label: "Rotor Sprinklers" },
+    dripLine: { cost: 220, label: "Drip Line" },
+    microSpray: { cost: 150, label: "Micro-spray" },
+    label: "Garden Sprinkler Type",
+  },
+  lawnNozzle: {
     fixedSpray: { cost: 90, label: "Fixed Spray" },
     adjustable: { cost: 120, label: "Adjustable" },
     mpRotator: { cost: 180, label: "MP Rotator" },
-    label: "Nozzle Type",
+    label: "Lawn Nozzle Type",
+  },
+  gardenNozzle: {
+    fixedSpray: { cost: 90, label: "Fixed Spray" },
+    adjustable: { cost: 120, label: "Adjustable" },
+    mpRotator: { cost: 180, label: "MP Rotator" },
+    label: "Garden Nozzle Type",
   },
   controller: {
     manualTapTimer: { cost: 0, label: "Manual Tap Timer" },
@@ -31,8 +44,10 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 120,
         gardenAreaSqm: 40,
-        sprinklerType: "popUp",
-        nozzleType: "fixedSpray",
+        lawnSprinklerType: "popUp",
+        gardenSprinklerType: "popUp",
+        lawnNozzleType: "fixedSpray",
+        gardenNozzleType: "fixedSpray",
         controllerType: "digitalTimer",
       },
       config
@@ -41,12 +56,14 @@ describe("calculateQuote", () => {
     expect(result.lineItems).toEqual([
       { label: "Lawn Irrigation", detail: "120 m\u00B2", amount: 1500 },
       { label: "Garden Irrigation", detail: "40 m\u00B2", amount: 720 },
-      { label: "Sprinkler Type", detail: "Pop-up Sprinklers", amount: 180 },
-      { label: "Nozzle Type", detail: "Fixed Spray", amount: 90 },
+      { label: "Lawn Sprinkler Type", detail: "Pop-up Sprinklers", amount: 180 },
+      { label: "Garden Sprinkler Type", detail: "Pop-up Sprinklers", amount: 180 },
+      { label: "Lawn Nozzle Type", detail: "Fixed Spray", amount: 90 },
+      { label: "Garden Nozzle Type", detail: "Fixed Spray", amount: 90 },
       { label: "Controller/Timer", detail: "Digital Timer", amount: 250 },
       { label: "Base Cost", detail: "", amount: 150 },
     ]);
-    expect(result.total).toBe(2890);
+    expect(result.total).toBe(3160);
   });
 
   it("returns zero for lawn when area is 0", () => {
@@ -54,8 +71,8 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 50,
-        sprinklerType: "popUp",
-        nozzleType: "fixedSpray",
+        gardenSprinklerType: "popUp",
+        gardenNozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
       },
       config
@@ -65,7 +82,7 @@ describe("calculateQuote", () => {
       (i) => i.label === "Lawn Irrigation"
     );
     expect(lawnItem).toBeUndefined();
-    // garden 900 + sprinkler 180 + nozzle 90 + base 150
+    // garden 900 + gardenSprinkler 180 + gardenNozzle 90 + base 150
     expect(result.total).toBe(900 + 180 + 90 + 150);
   });
 
@@ -74,8 +91,8 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 100,
         gardenAreaSqm: 0,
-        sprinklerType: "popUp",
-        nozzleType: "fixedSpray",
+        lawnSprinklerType: "popUp",
+        lawnNozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
       },
       config
@@ -92,8 +109,6 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        sprinklerType: "popUp",
-        nozzleType: "fixedSpray",
         controllerType: "smartWifi",
       },
       config
@@ -111,39 +126,98 @@ describe("calculateQuote", () => {
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        sprinklerType: "popUp",
-        nozzleType: "fixedSpray",
         controllerType: "manualTapTimer",
       },
       config
     );
 
-    // sprinkler 180 + nozzle 90 + base 150
-    expect(result.total).toBe(180 + 90 + 150);
+    // base 150 only (no nozzles when not provided)
+    expect(result.total).toBe(150);
     expect(result.lineItems[result.lineItems.length - 1]).toEqual(
       { label: "Base Cost", detail: "", amount: 150 }
     );
   });
 
-  it("adds rotor sprinkler and mp rotator costs", () => {
+  it("adds rotor sprinkler and mp rotator nozzle costs", () => {
     const result = calculateQuote(
       {
         lawnAreaSqm: 0,
         gardenAreaSqm: 0,
-        sprinklerType: "rotor",
-        nozzleType: "mpRotator",
+        lawnSprinklerType: "rotor",
+        lawnNozzleType: "mpRotator",
         controllerType: "manualTapTimer",
       },
       config
     );
 
     const sprinklerItem = result.lineItems.find(
-      (i) => i.label === "Sprinkler Type"
+      (i) => i.label === "Lawn Sprinkler Type"
     );
     const nozzleItem = result.lineItems.find(
-      (i) => i.label === "Nozzle Type"
+      (i) => i.label === "Lawn Nozzle Type"
     );
     expect(sprinklerItem!.amount).toBe(320);
     expect(nozzleItem!.amount).toBe(180);
+  });
+
+  it("omits sprinkler lines when types not provided", () => {
+    const result = calculateQuote(
+      {
+        lawnAreaSqm: 100,
+        gardenAreaSqm: 50,
+        controllerType: "digitalTimer",
+      },
+      config
+    );
+
+    const lawnSprinklerItem = result.lineItems.find(
+      (i) => i.label === "Lawn Sprinkler Type"
+    );
+    const gardenSprinklerItem = result.lineItems.find(
+      (i) => i.label === "Garden Sprinkler Type"
+    );
+    expect(lawnSprinklerItem).toBeUndefined();
+    expect(gardenSprinklerItem).toBeUndefined();
+  });
+
+  it("adds micro-spray cost for garden sprinkler", () => {
+    const result = calculateQuote(
+      {
+        lawnAreaSqm: 0,
+        gardenAreaSqm: 30,
+        gardenSprinklerType: "microSpray",
+        controllerType: "manualTapTimer",
+      },
+      config
+    );
+
+    const gardenSprinklerItem = result.lineItems.find(
+      (i) => i.label === "Garden Sprinkler Type"
+    );
+    expect(gardenSprinklerItem).toBeDefined();
+    expect(gardenSprinklerItem!.amount).toBe(150);
+    expect(gardenSprinklerItem!.detail).toBe("Micro-spray");
+  });
+
+  it("omits nozzle lines when types not provided", () => {
+    const result = calculateQuote(
+      {
+        lawnAreaSqm: 100,
+        gardenAreaSqm: 50,
+        lawnSprinklerType: "rotor",
+        gardenSprinklerType: "dripLine",
+        controllerType: "digitalTimer",
+      },
+      config
+    );
+
+    const lawnNozzleItem = result.lineItems.find(
+      (i) => i.label === "Lawn Nozzle Type"
+    );
+    const gardenNozzleItem = result.lineItems.find(
+      (i) => i.label === "Garden Nozzle Type"
+    );
+    expect(lawnNozzleItem).toBeUndefined();
+    expect(gardenNozzleItem).toBeUndefined();
   });
 });

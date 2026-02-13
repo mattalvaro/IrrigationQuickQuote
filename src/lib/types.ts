@@ -1,4 +1,6 @@
-export type SprinklerType = "popUp" | "rotor" | "dripLine";
+export type LawnSprinklerType = "popUp" | "rotor" | "dripLine";
+export type GardenSprinklerType = "popUp" | "rotor" | "dripLine" | "microSpray";
+export type SprinklerType = LawnSprinklerType | GardenSprinklerType;
 export type NozzleType = "fixedSpray" | "adjustable" | "mpRotator";
 export type ControllerType = "manualTapTimer" | "digitalTimer" | "smartWifi";
 export type ConnectionType =
@@ -13,8 +15,10 @@ export interface WizardData {
   mapSnapshot: string | null; // base64 PNG
 
   // Product selection steps
-  sprinklerType: SprinklerType;
-  nozzleType: NozzleType;
+  lawnSprinklerType: LawnSprinklerType;
+  gardenSprinklerType: GardenSprinklerType;
+  lawnNozzleType: NozzleType;
+  gardenNozzleType: NozzleType;
   controllerType: ControllerType;
 
   // Details step
@@ -31,8 +35,10 @@ export const initialWizardData: WizardData = {
   lawnAreas: [],
   gardenAreas: [],
   mapSnapshot: null,
-  sprinklerType: "popUp",
-  nozzleType: "fixedSpray",
+  lawnSprinklerType: "popUp",
+  gardenSprinklerType: "popUp",
+  lawnNozzleType: "fixedSpray",
+  gardenNozzleType: "fixedSpray",
   controllerType: "digitalTimer",
   waterSource: "",
   connectionType: "",
@@ -44,8 +50,10 @@ export const initialWizardData: WizardData = {
 export type WizardStep =
   | "welcome"
   | "map"
-  | "sprinklerType"
-  | "nozzleType"
+  | "lawnSprinklerType"
+  | "gardenSprinklerType"
+  | "lawnNozzleType"
+  | "gardenNozzleType"
   | "controllerType"
   | "details"
   | "estimate"
@@ -54,8 +62,10 @@ export type WizardStep =
 export const STEP_ORDER: WizardStep[] = [
   "welcome",
   "map",
-  "sprinklerType",
-  "nozzleType",
+  "lawnSprinklerType",
+  "gardenSprinklerType",
+  "lawnNozzleType",
+  "gardenNozzleType",
   "controllerType",
   "details",
   "estimate",

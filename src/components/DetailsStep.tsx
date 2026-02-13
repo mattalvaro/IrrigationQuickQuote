@@ -20,7 +20,7 @@ const connectionOptions: Record<"mains" | "bore", { value: ConnectionType; label
 
 export function DetailsStep({ data, onUpdate }: DetailsStepProps) {
   const showConnectionType = data.waterSource === "mains" || data.waterSource === "bore";
-  const options = showConnectionType ? connectionOptions[data.waterSource] : [];
+  const options = showConnectionType ? connectionOptions[data.waterSource as "mains" | "bore"] : [];
 
   function handleWaterSourceChange(value: WizardData["waterSource"]) {
     onUpdate({ waterSource: value, connectionType: "" });
