@@ -172,8 +172,64 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         ? "Click a button below to add another area, or continue to the next step."
         : "Search for your address, then draw your lawn and garden areas.";
 
+  function annotateCanvas() {
+    const map = mapRef.current;
+    const draw = drawRef.current;
+    if (!map || !draw) return;
+
+    const canvas = map.getCanvas();
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const allFeatures = draw.getAll();
+    const dpr = window.devicePixelRatio || 1;
+
+    for (const feature of allFeatures.features) {
+      const id = feature.id as string;
+      const type = featureTypes.current.get(id);
+      if (!type || !feature.geometry || feature.geometry.type !== "Polygon") continue;
+
+      const coords = feature.geometry.coordinates[0] as [number, number][];
+      if (!coords || coords.length < 4) continue;
+
+      const color = type === "lawn" ? "#22c55e" : "#d97706";
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const dist = calcDistanceLocal(coords[i], coords[i + 1]);
+        if (dist < 0.5) continue;
+
+        const pxA = map.project(coords[i] as [number, number]);
+        const pxB = map.project(coords[i + 1] as [number, number]);
+        const midX = ((pxA.x + pxB.x) / 2) * dpr;
+        const midY = ((pxA.y + pxB.y) / 2) * dpr;
+
+        const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+
+        const fontSize = 11 * dpr;
+        ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+        const textWidth = ctx.measureText(label).width;
+        const padX = 4 * dpr;
+        const padY = 3 * dpr;
+        const pillW = textWidth + padX * 2;
+        const pillH = fontSize + padY * 2;
+        const radius = 4 * dpr;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+        ctx.beginPath();
+        ctx.roundRect(midX - pillW / 2, midY - pillH / 2, pillW, pillH, radius);
+        ctx.fill();
+
+        ctx.fillStyle = color;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, midX, midY);
+      }
+    }
+  }
+
   function captureSnapshot(): string | null {
     if (!mapRef.current) return null;
+    annotateCanvas();
     return mapRef.current.getCanvas().toDataURL("image/png");
   }
 
@@ -343,4 +399,15 @@ function calcArea(feature: { geometry?: { type?: string; coordinates?: number[][
   }
   total = Math.abs(total * EARTH_RADIUS * EARTH_RADIUS / 2);
   return total;
+}
+
+function calcDistanceLocal(a: [number, number], b: [number, number]): number {
+  const RAD = Math.PI / 180;
+  const EARTH_RADIUS = 6371008.8;
+  const dLat = (b[1] - a[1]) * RAD;
+  const dLng = (b[0] - a[0]) * RAD;
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+  const h = sinLat * sinLat + Math.cos(a[1] * RAD) * Math.cos(b[1] * RAD) * sinLng * sinLng;
+  return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(h));
 }
