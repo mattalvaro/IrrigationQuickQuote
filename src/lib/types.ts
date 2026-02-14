@@ -13,6 +13,7 @@ export interface WizardData {
   lawnAreas: { id: string; sqm: number }[];
   gardenAreas: { id: string; sqm: number }[];
   mapSnapshot: string | null; // base64 PNG
+  address: string;
 
   // Product selection steps
   lawnSprinklerType: LawnSprinklerType;
@@ -35,6 +36,7 @@ export const initialWizardData: WizardData = {
   lawnAreas: [],
   gardenAreas: [],
   mapSnapshot: null,
+  address: "",
   lawnSprinklerType: "popUp",
   gardenSprinklerType: "popUp",
   lawnNozzleType: "fixedSpray",

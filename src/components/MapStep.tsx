@@ -21,7 +21,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   const mapRef = useRef<MapboxMap | null>(null);
   const drawRef = useRef<InstanceType<typeof MapboxDraw> | null>(null);
   const [drawingMode, setDrawingMode] = useState<DrawingMode>(null);
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(data.address || "");
   const [suggestions, setSuggestions] = useState<
     Array<{ place_name: string; center: [number, number] }>
   >([]);
@@ -145,6 +145,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   function selectAddress(center: [number, number], placeName: string) {
     setSuggestions([]);
     setAddress(placeName);
+    onUpdate({ address: placeName });
     mapRef.current?.flyTo({ center, zoom: 19 });
   }
 
