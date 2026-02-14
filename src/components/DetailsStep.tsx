@@ -28,45 +28,64 @@ export function DetailsStep({ data, onUpdate }: DetailsStepProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Additional Details</h2>
-
       <div>
-        <label htmlFor="waterSource" className="block text-sm font-medium text-gray-700 mb-1">
-          Water Source
-        </label>
-        <select
-          id="waterSource"
-          value={data.waterSource}
-          onChange={(e) => handleWaterSourceChange(e.target.value as WizardData["waterSource"])}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-        >
-          <option value="">Select...</option>
-          <option value="mains">Mains</option>
-          <option value="bore">Bore</option>
-          <option value="other">Other</option>
-        </select>
+        <h2 className="font-display text-2xl text-forest-deep mb-1">Additional Details</h2>
+        <p className="text-sm text-txt-muted">Tell us about your water supply so we can refine your quote.</p>
       </div>
 
-      {showConnectionType && (
+      <div className="space-y-5 stagger-children">
         <div>
-          <label htmlFor="connectionType" className="block text-sm font-medium text-gray-700 mb-1">
-            Connection Type
+          <label htmlFor="waterSource" className="form-label">
+            Water Source
           </label>
-          <select
-            id="connectionType"
-            value={data.connectionType}
-            onChange={(e) => onUpdate({ connectionType: e.target.value as ConnectionType })}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          >
-            <option value="">Select...</option>
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id="waterSource"
+              value={data.waterSource}
+              onChange={(e) => handleWaterSourceChange(e.target.value as WizardData["waterSource"])}
+              className="form-input appearance-none pr-10 cursor-pointer"
+            >
+              <option value="">Select your water source...</option>
+              <option value="mains">Mains</option>
+              <option value="bore">Bore</option>
+              <option value="other">Other</option>
+            </select>
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-txt-muted pointer-events-none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
         </div>
-      )}
+
+        {showConnectionType && (
+          <div className="animate-fade-in-up">
+            <label htmlFor="connectionType" className="form-label">
+              Connection Type
+            </label>
+            <div className="relative">
+              <select
+                id="connectionType"
+                value={data.connectionType}
+                onChange={(e) => onUpdate({ connectionType: e.target.value as ConnectionType })}
+                className="form-input appearance-none pr-10 cursor-pointer"
+              >
+                <option value="">Select connection type...</option>
+                {options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-txt-muted pointer-events-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

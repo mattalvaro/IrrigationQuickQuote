@@ -36,7 +36,7 @@ vi.mock("@turf/area", () => ({
 describe("MapStep", () => {
   it("renders address search input", () => {
     render(<MapStep data={initialWizardData} onUpdate={vi.fn()} />);
-    expect(screen.getByPlaceholderText(/enter your address/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/search your address/i)).toBeInTheDocument();
   });
 
   it("renders map container", () => {
@@ -52,14 +52,14 @@ describe("MapStep", () => {
 
   it("displays area totals", () => {
     render(<MapStep data={initialWizardData} onUpdate={vi.fn()} />);
-    expect(screen.getByText(/total lawn/i)).toBeInTheDocument();
-    expect(screen.getByText(/total garden/i)).toBeInTheDocument();
+    expect(screen.getByText(/lawn:/i)).toBeInTheDocument();
+    expect(screen.getByText(/garden:/i)).toBeInTheDocument();
   });
 
   it("shows default instruction text when no areas drawn", () => {
     render(<MapStep data={initialWizardData} onUpdate={vi.fn()} />);
     expect(screen.getByTestId("map-instructions")).toHaveTextContent(
-      "Click 'Draw Lawn' or 'Draw Garden' to start measuring an area."
+      "Search for your address, then draw your lawn and garden areas."
     );
   });
 
@@ -70,7 +70,7 @@ describe("MapStep", () => {
     };
     render(<MapStep data={dataWithAreas} onUpdate={vi.fn()} />);
     expect(screen.getByTestId("map-instructions")).toHaveTextContent(
-      "Click 'Draw Lawn' or 'Draw Garden' to add another area."
+      "Click a button below to add another area, or continue to the next step."
     );
   });
 

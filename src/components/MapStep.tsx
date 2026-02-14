@@ -29,7 +29,6 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   const featureTypes = useRef<Map<string, "lawn" | "garden">>(new Map());
   const drawingModeRef = useRef<DrawingMode>(null);
 
-  // Keep the ref in sync with state so event handlers see the latest value
   useEffect(() => {
     drawingModeRef.current = drawingMode;
   }, [drawingMode]);
@@ -45,7 +44,6 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
     for (const feature of allFeatures.features) {
       const id = feature.id as string;
-      // Calculate area using turf formula inline (avoid npm import issues)
       const sqm = Math.round(calcArea(feature));
       const type = featureTypes.current.get(id);
 
@@ -58,7 +56,6 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
   const [scriptReady, setScriptReady] = useState(false);
 
-  // Poll for CDN scripts to be available
   useEffect(() => {
     if (typeof window !== "undefined" && typeof (window as any).mapboxgl !== "undefined") {
       setScriptReady(true);
@@ -81,7 +78,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/satellite-v9",
-      center: [133.7751, -25.2744], // Australia center
+      center: [133.7751, -25.2744],
       zoom: 4,
       preserveDrawingBuffer: true,
     });
@@ -172,15 +169,14 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     drawingMode !== null
       ? "Click on the map to place points. Double-click to finish the shape."
       : hasAreas
-        ? "Click 'Draw Lawn' or 'Draw Garden' to add another area."
-        : "Click 'Draw Lawn' or 'Draw Garden' to start measuring an area.";
+        ? "Click a button below to add another area, or continue to the next step."
+        : "Search for your address, then draw your lawn and garden areas.";
 
   function captureSnapshot(): string | null {
     if (!mapRef.current) return null;
     return mapRef.current.getCanvas().toDataURL("image/png");
   }
 
-  // Expose snapshot capture for parent to call before navigating
   useEffect(() => {
     const handleBeforeNext = () => {
       const snapshot = captureSnapshot();
@@ -191,26 +187,34 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   }, [onUpdate]);
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Measure Your Property</h2>
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-display text-2xl text-forest-deep mb-1">Measure Your Property</h2>
+        <p className="text-sm text-txt-muted" data-testid="map-instructions">{instructionText}</p>
+      </div>
 
+      {/* Address Search */}
       <div className="relative">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-muted pointer-events-none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </div>
         <input
           type="text"
-          placeholder="Enter your address..."
+          placeholder="Search your address..."
           value={address}
           onChange={(e) => searchAddress(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2"
+          className="form-input pl-10"
         />
         {suggestions.length > 0 && (
-          <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-b shadow-lg max-h-48 overflow-y-auto">
+          <ul className="absolute z-10 w-full bg-white border border-border rounded-xl mt-1 shadow-lg max-h-48 overflow-y-auto">
             {suggestions.map((s, i) => (
               <li
                 key={i}
-                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                onClick={() => {
-                  selectAddress(s.center, s.place_name);
-                }}
+                className="px-4 py-3 hover:bg-lawn-pale/50 cursor-pointer text-sm text-txt-primary transition-colors first:rounded-t-xl last:rounded-b-xl"
+                onClick={() => selectAddress(s.center, s.place_name)}
               >
                 {s.place_name}
               </li>
@@ -219,83 +223,99 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         )}
       </div>
 
-      <p className="text-sm text-gray-600" data-testid="map-instructions">
-        {instructionText}
-      </p>
-
-      <div className="flex gap-2">
+      {/* Drawing Buttons */}
+      <div className="flex gap-3">
         <button
           type="button"
           onClick={() => startDrawing("lawn")}
-          className={`px-3 py-2 rounded text-sm font-medium ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
             drawingMode === "lawn"
-              ? "bg-green-600 text-white"
-              : "bg-green-100 text-green-800 hover:bg-green-200"
+              ? "bg-forest-mid text-white shadow-md"
+              : "bg-lawn-pale text-forest-mid hover:bg-lawn-pale/80 hover:shadow-sm"
           }`}
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
           Draw Lawn
         </button>
         <button
           type="button"
           onClick={() => startDrawing("garden")}
-          className={`px-3 py-2 rounded text-sm font-medium ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
             drawingMode === "garden"
-              ? "bg-orange-600 text-white"
-              : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+              ? "bg-garden-warm text-white shadow-md"
+              : "bg-garden-pale text-earth-light hover:bg-garden-pale/80 hover:shadow-sm"
           }`}
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 22c4.97 0 9-4.03 9-9-4.97 0-9 4.03-9 9zM5.6 10.25c0 1.38 1.12 2.5 2.5 2.5.53 0 1.01-.16 1.42-.44l-.02.19c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5l-.02-.19c.4.28.89.44 1.42.44 1.38 0 2.5-1.12 2.5-2.5 0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.25 1.43-2.25 0-1.38-1.12-2.5-2.5-2.5-.53 0-1.01.16-1.42.44l.02-.19C14.5 2.12 13.38 1 12 1S9.5 2.12 9.5 3.5l.02.19c-.4-.28-.89-.44-1.42-.44-1.38 0-2.5 1.12-2.5 2.5 0 1 .59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25zM12 5.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5S9.5 9.38 9.5 8s1.12-2.5 2.5-2.5zM3 13c0 4.97 4.03 9 9 9 0-4.97-4.03-9-9-9z"/>
+          </svg>
           Draw Garden
         </button>
       </div>
 
+      {/* Map */}
       <div
         data-testid="map-container"
         ref={mapContainer}
-        className="w-full h-96 rounded border border-gray-300"
+        className="w-full h-96 rounded-2xl border border-border shadow-sm overflow-hidden"
       />
 
-      <div className="flex gap-6 text-sm">
-        <p>
-          <span className="font-medium">Total Lawn:</span>{" "}
-          <span className="text-green-700">{totalLawn} m²</span>
-        </p>
-        <p>
-          <span className="font-medium">Total Garden:</span>{" "}
-          <span className="text-orange-700">{totalGarden} m²</span>
-        </p>
+      {/* Area Totals */}
+      <div className="flex gap-6">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-lawn" />
+          <span className="text-sm font-medium text-txt-secondary">
+            Lawn: <span className="text-forest-mid font-semibold">{totalLawn} m²</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-garden-warm" />
+          <span className="text-sm font-medium text-txt-secondary">
+            Garden: <span className="text-earth font-semibold">{totalGarden} m²</span>
+          </span>
+        </div>
       </div>
 
+      {/* Area List */}
       {hasAreas && (
-        <ul className="space-y-1 text-sm" data-testid="area-list">
+        <ul className="space-y-2" data-testid="area-list">
           {data.lawnAreas.map((area, i) => (
-            <li key={area.id} className="flex items-center gap-2">
-              <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+            <li key={area.id} className="flex items-center gap-3 bg-lawn-pale/40 rounded-xl px-4 py-2.5 transition-colors hover:bg-lawn-pale/60">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest-mid bg-lawn-pale px-2.5 py-1 rounded-lg">
+                <div className="w-2 h-2 rounded-full bg-lawn" />
                 Lawn {i + 1}
               </span>
-              <span>{area.sqm} m²</span>
+              <span className="text-sm font-medium text-txt-primary">{area.sqm} m²</span>
               <button
                 type="button"
                 onClick={() => deleteArea(area.id)}
-                className="text-gray-400 hover:text-red-600 ml-auto"
+                className="ml-auto text-txt-muted hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50"
                 aria-label={`Delete Lawn ${i + 1}`}
               >
-                ×
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
               </button>
             </li>
           ))}
           {data.gardenAreas.map((area, i) => (
-            <li key={area.id} className="flex items-center gap-2">
-              <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+            <li key={area.id} className="flex items-center gap-3 bg-garden-pale/40 rounded-xl px-4 py-2.5 transition-colors hover:bg-garden-pale/60">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-earth bg-garden-pale px-2.5 py-1 rounded-lg">
+                <div className="w-2 h-2 rounded-full bg-garden-warm" />
                 Garden {i + 1}
               </span>
-              <span>{area.sqm} m²</span>
+              <span className="text-sm font-medium text-txt-primary">{area.sqm} m²</span>
               <button
                 type="button"
                 onClick={() => deleteArea(area.id)}
-                className="text-gray-400 hover:text-red-600 ml-auto"
+                className="ml-auto text-txt-muted hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50"
                 aria-label={`Delete Garden ${i + 1}`}
               >
-                ×
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
               </button>
             </li>
           ))}
@@ -305,10 +325,6 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   );
 }
 
-/**
- * Calculate the area of a GeoJSON polygon in square meters.
- * Simplified spherical excess formula (replaces @turf/area npm dependency).
- */
 function calcArea(feature: { geometry?: { type?: string; coordinates?: number[][][] } }): number {
   if (!feature.geometry || feature.geometry.type !== "Polygon" || !feature.geometry.coordinates) {
     return 0;

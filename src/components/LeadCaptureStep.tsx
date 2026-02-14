@@ -14,60 +14,62 @@ export function LeadCaptureStep({ data, onUpdate, onSubmit }: LeadCaptureStepPro
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-xl font-semibold">Get Your Estimate</h2>
-
-      <p className="text-sm text-gray-500">
-        Enter your details to receive your guide price estimate. A team member
-        will be in touch to confirm the final price based on a site assessment.
-      </p>
-
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Name
-        </label>
-        <input
-          id="name"
-          type="text"
-          required
-          value={data.name}
-          onChange={(e) => onUpdate({ name: e.target.value })}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-        />
+        <h2 className="font-display text-2xl text-forest-deep mb-1">Get Your Estimate</h2>
+        <p className="text-sm text-txt-muted">
+          Enter your details to receive your guide price. A team member
+          will be in touch to confirm the final price based on a site assessment.
+        </p>
       </div>
 
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          value={data.email}
-          onChange={(e) => onUpdate({ email: e.target.value })}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-        />
+      <div className="space-y-4 stagger-children">
+        <div>
+          <label htmlFor="name" className="form-label">Full Name</label>
+          <input
+            id="name"
+            type="text"
+            required
+            value={data.name}
+            onChange={(e) => onUpdate({ name: e.target.value })}
+            className="form-input"
+            placeholder="Your full name"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="form-label">Email Address</label>
+          <input
+            id="email"
+            type="email"
+            required
+            value={data.email}
+            onChange={(e) => onUpdate({ email: e.target.value })}
+            className="form-input"
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="phone" className="form-label">Phone Number</label>
+          <input
+            id="phone"
+            type="tel"
+            required
+            value={data.phone}
+            onChange={(e) => onUpdate({ phone: e.target.value })}
+            className="form-input"
+            placeholder="04XX XXX XXX"
+          />
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-          Phone
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          required
-          value={data.phone}
-          onChange={(e) => onUpdate({ phone: e.target.value })}
-          className="w-full border border-gray-300 rounded px-3 py-2"
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700"
-      >
-        Get My Estimate
+      <button type="submit" className="btn-primary w-full py-3.5 text-base">
+        <span className="flex items-center justify-center gap-2">
+          Get My Estimate
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </span>
       </button>
     </form>
   );

@@ -105,9 +105,9 @@ describe("ProductSelectionStep", () => {
     );
 
     const selectedButton = screen.getByText("Option A").closest("button");
-    expect(selectedButton?.className).toContain("border-blue-600");
+    expect(selectedButton?.className).toContain("selected");
 
     const unselectedButton = screen.getByText("Option B").closest("button");
-    expect(unselectedButton?.className).not.toContain("border-blue-600");
+    expect(unselectedButton?.className).not.toContain("selected");
   });
 });

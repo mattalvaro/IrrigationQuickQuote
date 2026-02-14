@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Wizard } from "@/components/Wizard";
 
@@ -43,7 +43,7 @@ describe("Wizard", () => {
     render(<Wizard />);
     // With no lawn/garden areas, sprinkler and nozzle steps are filtered out
     // welcome, map, controllerType, details, estimate, lead = 6
-    expect(screen.getByText(/step 1 of 6/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 \/ 6/)).toBeInTheDocument();
   });
 
   it("navigates to next step when Next is clicked", async () => {
@@ -51,7 +51,9 @@ describe("Wizard", () => {
     render(<Wizard />);
 
     await user.click(screen.getByRole("button", { name: /next/i }));
-    expect(screen.getByText(/step 2 of 6/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/2 \/ 6/)).toBeInTheDocument();
+    });
   });
 
   it("navigates back when Back is clicked", async () => {
@@ -59,8 +61,13 @@ describe("Wizard", () => {
     render(<Wizard />);
 
     await user.click(screen.getByRole("button", { name: /next/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
+    });
     await user.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByText(/step 1 of 6/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/1 \/ 6/)).toBeInTheDocument();
+    });
   });
 
   it("does not show Back button on first step", () => {

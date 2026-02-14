@@ -31,36 +31,46 @@ export function EstimateStep({ data }: EstimateStepProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Your Estimate</h2>
+      <div>
+        <h2 className="font-display text-2xl text-forest-deep mb-1">Your Estimate</h2>
+        <p className="text-sm text-txt-muted">Here&apos;s a breakdown of your guide price.</p>
+      </div>
 
-      <table className="w-full">
-        <tbody>
-          {quote.lineItems.map((item) => (
-            <tr key={item.label} className="border-b border-gray-100">
-              <td className="py-2 text-gray-700">
-                {item.label}
-                {item.detail && (
-                  <span className="text-sm text-gray-400 ml-2">({item.detail})</span>
-                )}
+      <div className="bg-cream/60 rounded-2xl border border-border-light p-5">
+        <table className="w-full">
+          <tbody>
+            {quote.lineItems.map((item, i) => (
+              <tr key={item.label} className="estimate-row" style={{ animationDelay: `${i * 0.05}s` }}>
+                <td className="py-3 text-sm text-txt-secondary">
+                  {item.label}
+                  {item.detail && (
+                    <span className="text-xs text-txt-muted ml-1.5">({item.detail})</span>
+                  )}
+                </td>
+                <td className="py-3 text-right text-sm font-semibold text-txt-primary tabular-nums">
+                  {formatter.format(item.amount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-forest-mid/20">
+              <td className="pt-4 pb-2">
+                <span className="font-display text-xl text-forest-deep">Guide Price Total</span>
               </td>
-              <td className="py-2 text-right font-medium">
-                {formatter.format(item.amount)}
+              <td className="pt-4 pb-2 text-right">
+                <span className="font-display text-2xl text-forest-deep tabular-nums">
+                  {formatter.format(quote.total)}
+                </span>
               </td>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="border-t-2 border-gray-900">
-            <td className="py-3 font-bold text-lg">Guide Price Total</td>
-            <td className="py-3 text-right font-bold text-lg">
-              {formatter.format(quote.total)}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
 
-      <p className="text-sm text-gray-500 italic">
+      <p className="text-xs text-txt-muted italic leading-relaxed">
         This is a guide price only and would need to be confirmed based on a site assessment.
+        Actual costs may vary depending on site conditions and material availability.
       </p>
     </div>
   );
