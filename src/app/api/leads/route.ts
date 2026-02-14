@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
+import { sendLeadEmail } from "@/lib/email";
+import { calculateQuote, getDefaultConfig } from "@/lib/pricing";
+import type { QuoteInput } from "@/lib/pricing";
 
 const LEADS_FILE = path.join(process.cwd(), "data", "leads.json");
 
@@ -47,6 +50,59 @@ export async function POST(request: NextRequest) {
   const leads = await readLeads();
   leads.push(lead);
   await writeLeads(leads);
+
+  // Send email notification (fire-and-forget, don't block response)
+  const inputData = body.inputData;
+
+  // Calculate area totals
+  const lawnArea = (inputData.lawnAreas || []).reduce((sum: number, area: { sqm: number }) => sum + area.sqm, 0);
+  const gardenArea = (inputData.gardenAreas || []).reduce((sum: number, area: { sqm: number }) => sum + area.sqm, 0);
+
+  // Recalculate quote using pricing engine
+  const quoteInput: QuoteInput = {
+    lawnAreaSqm: lawnArea,
+    gardenAreaSqm: gardenArea,
+    lawnSprinklerType: inputData.lawnSprinklerType,
+    gardenSprinklerType: inputData.gardenSprinklerType,
+    lawnNozzleType: inputData.lawnNozzleType,
+    gardenNozzleType: inputData.gardenNozzleType,
+    controllerType: inputData.controllerType,
+  };
+  const quote = calculateQuote(quoteInput, getDefaultConfig());
+
+  // Map quote format to email format
+  const emailQuote = {
+    lineItems: quote.lineItems.map((item) => ({
+      description: `${item.label}${item.detail ? ` — ${item.detail}` : ""}`,
+      amount: item.amount,
+    })),
+    total: quote.total,
+  };
+
+  sendLeadEmail(
+    {
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      address: inputData.address || "Address not provided",
+      lawnArea,
+      gardenArea,
+      pavementArea: 0, // Not tracked in current wizard
+      otherArea: 0, // Not tracked in current wizard
+      quote: emailQuote,
+      selections: {
+        lawnSprinklerType: inputData.lawnSprinklerType,
+        gardenSprinklerType: inputData.gardenSprinklerType,
+        lawnNozzleType: inputData.lawnNozzleType,
+        gardenNozzleType: inputData.gardenNozzleType,
+        controllerType: inputData.controllerType,
+      },
+    },
+    lead.mapSnapshot
+  ).catch((error) => {
+    // Log error but don't fail the request
+    console.error("Failed to send lead email:", error);
+  });
 
   return NextResponse.json({ id: lead.id }, { status: 201 });
 }
