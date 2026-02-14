@@ -28,6 +28,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
   const featureTypes = useRef<Map<string, "lawn" | "garden">>(new Map());
   const drawingModeRef = useRef<DrawingMode>(null);
+  const edgeMarkersRef = useRef<Array<any>>([]);
 
   useEffect(() => {
     drawingModeRef.current = drawingMode;
@@ -35,6 +36,63 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
   const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
   const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
+
+  const updateEdgeLabels = useCallback(() => {
+    const map = mapRef.current;
+    const draw = drawRef.current;
+    if (!map || !draw) return;
+
+    // Remove all existing markers
+    edgeMarkersRef.current.forEach((marker) => marker.remove());
+    edgeMarkersRef.current = [];
+
+    const allFeatures = draw.getAll();
+
+    for (const feature of allFeatures.features) {
+      const id = feature.id as string;
+      const type = featureTypes.current.get(id);
+      if (!type || !feature.geometry || feature.geometry.type !== "Polygon") continue;
+
+      const coords = feature.geometry.coordinates[0] as [number, number][];
+      if (!coords || coords.length < 4) continue;
+
+      const color = type === "lawn" ? "#22c55e" : "#d97706";
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const dist = calcDistanceLocal(coords[i], coords[i + 1]);
+        if (dist < 0.5) continue; // Skip tiny edges
+
+        const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
+        const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
+
+        const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+
+        // Create HTML element for the marker
+        const el = document.createElement("div");
+        el.className = "edge-label";
+        el.style.cssText = `
+          background: rgba(0, 0, 0, 0.75);
+          color: ${color};
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: bold;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          white-space: nowrap;
+          pointer-events: none;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        `;
+        el.textContent = label;
+
+        // Create and add marker
+        const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+          .setLngLat([midLng, midLat])
+          .addTo(map);
+
+        edgeMarkersRef.current.push(marker);
+      }
+    }
+  }, []);
 
   const updateAreas = useCallback(() => {
     if (!drawRef.current) return;
@@ -52,7 +110,8 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     }
 
     onUpdate({ lawnAreas, gardenAreas });
-  }, [onUpdate]);
+    updateEdgeLabels();
+  }, [onUpdate, updateEdgeLabels]);
 
   const [scriptReady, setScriptReady] = useState(false);
 
@@ -242,6 +301,14 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     window.addEventListener("wizard:beforeNext", handleBeforeNext);
     return () => window.removeEventListener("wizard:beforeNext", handleBeforeNext);
   }, [onUpdate]);
+
+  // Cleanup edge markers on unmount
+  useEffect(() => {
+    return () => {
+      edgeMarkersRef.current.forEach((marker) => marker.remove());
+      edgeMarkersRef.current = [];
+    };
+  }, []);
 
   return (
     <div className="space-y-5">
