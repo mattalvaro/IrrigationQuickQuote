@@ -319,7 +319,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
       {/* Address Search */}
       <div className="relative">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-txt-muted pointer-events-none">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-txt-muted pointer-events-none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/>
             <path d="M21 21l-4.35-4.35"/>
@@ -330,7 +330,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
           placeholder="Search your address..."
           value={address}
           onChange={(e) => searchAddress(e.target.value)}
-          className="form-input pl-10"
+          className="form-input pl-11"
         />
         {suggestions.length > 0 && (
           <ul className="absolute z-10 w-full bg-white border border-border rounded-xl mt-1 shadow-lg max-h-48 overflow-y-auto">
