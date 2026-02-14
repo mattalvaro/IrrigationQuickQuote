@@ -10,7 +10,9 @@
 
 ## Environment
 - Requires `NEXT_PUBLIC_MAPBOX_TOKEN` — Mapbox public token (format: `pk.eyJ...`)
-- Copy `.env.example` → `.env.local` and fill in your token
+- Requires `RESEND_API_KEY` — Resend API key for sending lead notification emails (server-side only)
+- Requires `LEAD_NOTIFY_EMAIL` — Business email address to receive lead notifications
+- Copy `.env.example` → `.env.local` and fill in your tokens
 
 ## Project Structure
 - `src/app/` — Next.js App Router (layout, page, API routes)
