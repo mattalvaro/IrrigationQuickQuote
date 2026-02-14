@@ -248,7 +248,9 @@ export async function sendLeadEmail(
 
   // Add map snapshot attachments if provided
   if (mapSnapshotBase64) {
-    const imageBuffer = Buffer.from(mapSnapshotBase64, "base64");
+    // Strip data URI prefix if present
+    const base64Data = mapSnapshotBase64.replace(/^data:image\/png;base64,/, "");
+    const imageBuffer = Buffer.from(base64Data, "base64");
 
     // First attachment: for inline CID reference
     attachments.push({

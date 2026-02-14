@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
     total: quote.total,
   };
 
+  console.log("📧 Attempting to send lead email...");
+  console.log("  To:", process.env.LEAD_NOTIFY_EMAIL);
+  console.log("  Map snapshot:", lead.mapSnapshot ? `${lead.mapSnapshot.substring(0, 50)}...` : "null");
+
   sendLeadEmail(
     {
       name: lead.name,
@@ -99,10 +103,16 @@ export async function POST(request: NextRequest) {
       },
     },
     lead.mapSnapshot
-  ).catch((error) => {
-    // Log error but don't fail the request
-    console.error("Failed to send lead email:", error);
-  });
+  )
+    .then(() => {
+      console.log("✅ Lead email sent successfully!");
+    })
+    .catch((error) => {
+      // Log error but don't fail the request
+      console.error("❌ Failed to send lead email:");
+      console.error("  Error message:", error.message);
+      console.error("  Full error:", error);
+    });
 
   return NextResponse.json({ id: lead.id }, { status: 201 });
 }
