@@ -232,14 +232,10 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         ? "Click a button below to add another area, or continue to the next step."
         : "Search for your address, then draw your lawn and garden areas.";
 
-  function annotateCanvas() {
+  function annotateCanvas(targetCanvas: HTMLCanvasElement, targetCtx: CanvasRenderingContext2D) {
     const map = mapRef.current;
     const draw = drawRef.current;
     if (!map || !draw) return;
-
-    const canvas = map.getCanvas();
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
     const allFeatures = draw.getAll();
     const dpr = window.devicePixelRatio || 1;
@@ -266,31 +262,49 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
 
         const fontSize = 11 * dpr;
-        ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-        const textWidth = ctx.measureText(label).width;
+        targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+        const textWidth = targetCtx.measureText(label).width;
         const padX = 4 * dpr;
         const padY = 3 * dpr;
         const pillW = textWidth + padX * 2;
         const pillH = fontSize + padY * 2;
         const radius = 4 * dpr;
 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
-        ctx.beginPath();
-        ctx.roundRect(midX - pillW / 2, midY - pillH / 2, pillW, pillH, radius);
-        ctx.fill();
+        targetCtx.fillStyle = "rgba(0, 0, 0, 0.65)";
+        targetCtx.beginPath();
+        targetCtx.roundRect(midX - pillW / 2, midY - pillH / 2, pillW, pillH, radius);
+        targetCtx.fill();
 
-        ctx.fillStyle = color;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(label, midX, midY);
+        targetCtx.fillStyle = color;
+        targetCtx.textAlign = "center";
+        targetCtx.textBaseline = "middle";
+        targetCtx.fillText(label, midX, midY);
       }
     }
   }
 
   function captureSnapshot(): string | null {
     if (!mapRef.current) return null;
-    annotateCanvas();
-    return mapRef.current.getCanvas().toDataURL("image/png");
+
+    const map = mapRef.current;
+    const mapCanvas = map.getCanvas();
+
+    // Create a temporary 2D canvas
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = mapCanvas.width;
+    tempCanvas.height = mapCanvas.height;
+
+    const ctx = tempCanvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Copy the WebGL canvas to the 2D canvas
+    ctx.drawImage(mapCanvas, 0, 0);
+
+    // Annotate the 2D canvas
+    annotateCanvas(tempCanvas, ctx);
+
+    // Capture the annotated canvas
+    return tempCanvas.toDataURL("image/png");
   }
 
   useEffect(() => {
@@ -330,7 +344,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
           placeholder="Search your address..."
           value={address}
           onChange={(e) => searchAddress(e.target.value)}
-          className="form-input pl-11"
+          className="form-input !pl-12"
         />
         {suggestions.length > 0 && (
           <ul className="absolute z-10 w-full bg-white border border-border rounded-xl mt-1 shadow-lg max-h-48 overflow-y-auto">
