@@ -507,3 +507,16 @@ function calcDistanceLocal(a: [number, number], b: [number, number]): number {
   const h = sinLat * sinLat + Math.cos(a[1] * RAD) * Math.cos(b[1] * RAD) * sinLng * sinLng;
   return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(h));
 }
+
+export function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number }
+): boolean {
+  const padding = 8; // 8px minimum gap between labels
+  return !(
+    a.x + a.width / 2 + padding < b.x - b.width / 2 ||
+    a.x - a.width / 2 - padding > b.x + b.width / 2 ||
+    a.y + a.height / 2 + padding < b.y - b.height / 2 ||
+    a.y - a.height / 2 - padding > b.y + b.height / 2
+  );
+}
