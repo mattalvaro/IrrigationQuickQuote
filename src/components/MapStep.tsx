@@ -11,7 +11,7 @@ declare const MapboxDraw: any;
 
 type DrawingMode = "lawn" | "garden" | null;
 
-interface LabelBox {
+export interface LabelBox {
   id: string;                     // unique identifier (edge index + polygon id)
   x: number;                      // center X position (px or canvas coords)
   y: number;                      // center Y position (px or canvas coords)
