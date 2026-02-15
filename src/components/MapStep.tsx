@@ -60,52 +60,109 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     edgeMarkersRef.current.forEach((marker) => marker.remove());
     edgeMarkersRef.current = [];
 
-    const allFeatures = draw.getAll();
+    // Calculate label boxes
+    const dpr = window.devicePixelRatio || 1;
+    const boxes = calculateLabelBoxes(map, draw, featureTypes.current, dpr);
 
-    for (const feature of allFeatures.features) {
-      const id = feature.id as string;
-      const type = featureTypes.current.get(id);
-      if (!type || !feature.geometry || feature.geometry.type !== "Polygon") continue;
+    // Position labels with collision detection
+    const canvas = map.getCanvas();
+    const positioned = positionLabelsWithGrid(boxes, canvas.width, canvas.height);
 
-      const coords = feature.geometry.coordinates[0] as [number, number][];
-      if (!coords || coords.length < 4) continue;
+    // Create markers at final positions
+    for (const box of positioned) {
+      const [finalX, finalY] = box.finalPosition!;
+      const finalLngLat = map.unproject([finalX, finalY]);
+      const label = formatDistanceLabel(box.distance);
 
-      const bgColor = type === 'lawn'
-        ? 'rgba(34, 197, 94, 0.85)'   // Green for lawn
-        : 'rgba(217, 119, 6, 0.85)';  // Orange for garden
+      const bgColor = box.type === 'lawn'
+        ? 'rgba(34, 197, 94, 0.85)'
+        : 'rgba(217, 119, 6, 0.85)';
 
-      for (let i = 0; i < coords.length - 1; i++) {
-        const dist = calcDistanceLocal(coords[i], coords[i + 1]);
-        if (dist < 0.5) continue; // Skip tiny edges
+      // Create label element
+      const labelEl = document.createElement('div');
+      labelEl.className = 'edge-label';
+      labelEl.style.cssText = `
+        background: ${bgColor};
+        color: #ffffff;
+        padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X * 1.5}px;
+        border-radius: 4px;
+        font-size: ${LABEL_FONT_SIZE}px;
+        font-weight: bold;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      `;
+      labelEl.textContent = label;
 
-        const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
-        const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
+      const marker = new mapboxgl.Marker({ element: labelEl, anchor: 'center' })
+        .setLngLat(finalLngLat)
+        .addTo(map);
 
-        const label = formatDistanceLabel(dist);
+      edgeMarkersRef.current.push(marker);
 
-        // Create HTML element for the marker
-        const el = document.createElement("div");
-        el.className = "edge-label";
-        el.style.cssText = `
-          background: ${bgColor};
-          color: #ffffff;
-          padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X * 1.5}px;
-          border-radius: 4px;
-          font-size: ${LABEL_FONT_SIZE}px;
-          font-weight: bold;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          white-space: nowrap;
+      // Add leader line if needed
+      if (box.needsLeader) {
+        const lineColor = box.type === 'lawn' ? '#22c55e' : '#d97706';
+        const [midLng, midLat] = box.edgeMidpoint;
+
+        // Create SVG line element
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
           pointer-events: none;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          overflow: visible;
         `;
-        el.textContent = label;
 
-        // Create and add marker
-        const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+        // Convert coordinates to pixel positions for SVG
+        const startPx = map.project([midLng, midLat]);
+        const endPx = map.project(finalLngLat);
+
+        line.setAttribute('x1', startPx.x.toString());
+        line.setAttribute('y1', startPx.y.toString());
+        line.setAttribute('x2', endPx.x.toString());
+        line.setAttribute('y2', endPx.y.toString());
+        line.setAttribute('stroke', lineColor);
+        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('opacity', '0.7');
+
+        svg.appendChild(line);
+
+        // Create a marker for the SVG
+        const svgContainer = document.createElement('div');
+        svgContainer.appendChild(svg);
+
+        const lineMarker = new mapboxgl.Marker({
+          element: svgContainer,
+          anchor: 'center'
+        })
           .setLngLat([midLng, midLat])
           .addTo(map);
 
-        edgeMarkersRef.current.push(marker);
+        edgeMarkersRef.current.push(lineMarker);
+
+        // Create endpoint dot
+        const dotEl = document.createElement('div');
+        dotEl.style.cssText = `
+          width: 6px;
+          height: 6px;
+          background: ${lineColor};
+          border: 1px solid white;
+          border-radius: 50%;
+          pointer-events: none;
+        `;
+
+        const dotMarker = new mapboxgl.Marker({ element: dotEl, anchor: 'center' })
+          .setLngLat([midLng, midLat])
+          .addTo(map);
+
+        edgeMarkersRef.current.push(dotMarker);
       }
     }
   }, []);
