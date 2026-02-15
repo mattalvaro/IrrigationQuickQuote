@@ -11,6 +11,20 @@ declare const MapboxDraw: any;
 
 type DrawingMode = "lawn" | "garden" | null;
 
+interface LabelBox {
+  id: string;                     // unique identifier (edge index + polygon id)
+  x: number;                      // center X position (px or canvas coords)
+  y: number;                      // center Y position (px or canvas coords)
+  width: number;                  // label width in pixels
+  height: number;                 // label height in pixels
+  edgeMidpoint: [number, number]; // original [lng, lat] or [x, y]
+  edgeMidpointPx: [number, number]; // edge midpoint in pixel coords
+  distance: number;               // the measurement value (e.g., 13.5)
+  type: 'lawn' | 'garden';
+  finalPosition?: [number, number]; // set after collision resolution
+  needsLeader?: boolean;          // true if moved from midpoint
+}
+
 interface MapStepProps {
   data: WizardData;
   onUpdate: (partial: Partial<WizardData>) => void;
