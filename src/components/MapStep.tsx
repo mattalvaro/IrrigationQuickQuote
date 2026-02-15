@@ -508,10 +508,9 @@ function calcDistanceLocal(a: [number, number], b: [number, number]): number {
   return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(h));
 }
 
-export function boxesOverlap(
-  a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number }
-): boolean {
+type BoundingBox = Pick<LabelBox, 'x' | 'y' | 'width' | 'height'>;
+
+export function boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
   const padding = 8; // 8px minimum gap between labels
   return !(
     a.x + a.width / 2 + padding < b.x - b.width / 2 ||
