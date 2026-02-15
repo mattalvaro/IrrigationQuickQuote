@@ -310,51 +310,77 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     const draw = drawRef.current;
     if (!map || !draw) return;
 
-    const allFeatures = draw.getAll();
     const dpr = window.devicePixelRatio || 1;
 
-    for (const feature of allFeatures.features) {
-      const id = feature.id as string;
-      const type = featureTypes.current.get(id);
-      if (!type || !feature.geometry || feature.geometry.type !== "Polygon") continue;
+    // Calculate label boxes in canvas coordinates
+    const boxes = calculateLabelBoxes(map, draw, featureTypes.current, dpr);
 
-      const coords = feature.geometry.coordinates[0] as [number, number][];
-      if (!coords || coords.length < 4) continue;
+    // Position labels with collision detection
+    const positioned = positionLabelsWithGrid(boxes, targetCanvas.width, targetCanvas.height);
 
-      const bgColor = type === 'lawn'
+    // Draw leader lines first (behind labels)
+    for (const box of positioned) {
+      if (!box.needsLeader) continue;
+
+      const lineColor = box.type === 'lawn' ? '#22c55e' : '#d97706';
+      const [startX, startY] = box.edgeMidpointPx!;
+      const [endX, endY] = box.finalPosition!;
+
+      // Draw line
+      targetCtx.strokeStyle = lineColor;
+      targetCtx.lineWidth = 1.5 * dpr;
+      targetCtx.globalAlpha = 0.7;
+      targetCtx.beginPath();
+      targetCtx.moveTo(startX * dpr, startY * dpr);
+      targetCtx.lineTo(endX * dpr, endY * dpr);
+      targetCtx.stroke();
+      targetCtx.globalAlpha = 1.0;
+
+      // Draw endpoint dot
+      targetCtx.fillStyle = lineColor;
+      targetCtx.strokeStyle = '#ffffff';
+      targetCtx.lineWidth = 1 * dpr;
+      targetCtx.beginPath();
+      targetCtx.arc(startX * dpr, startY * dpr, 3 * dpr, 0, 2 * Math.PI);
+      targetCtx.fill();
+      targetCtx.stroke();
+    }
+
+    // Draw labels on top
+    for (const box of positioned) {
+      const [x, y] = box.finalPosition!;
+      const label = formatDistanceLabel(box.distance);
+
+      const bgColor = box.type === 'lawn'
         ? 'rgba(34, 197, 94, 0.85)'
         : 'rgba(217, 119, 6, 0.85)';
 
-      for (let i = 0; i < coords.length - 1; i++) {
-        const dist = calcDistanceLocal(coords[i], coords[i + 1]);
-        if (dist < 0.5) continue;
+      const fontSize = LABEL_FONT_SIZE * dpr;
+      targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+      const textWidth = targetCtx.measureText(label).width;
+      const padX = LABEL_PADDING_X * dpr;
+      const padY = LABEL_PADDING_Y * dpr;
+      const pillW = textWidth + padX * 2;
+      const pillH = fontSize + padY * 2;
+      const radius = 4 * dpr;
 
-        const pxA = map.project(coords[i] as [number, number]);
-        const pxB = map.project(coords[i + 1] as [number, number]);
-        const midX = ((pxA.x + pxB.x) / 2) * dpr;
-        const midY = ((pxA.y + pxB.y) / 2) * dpr;
+      // Draw pill background
+      targetCtx.fillStyle = bgColor;
+      targetCtx.beginPath();
+      targetCtx.roundRect(
+        x * dpr - pillW / 2,
+        y * dpr - pillH / 2,
+        pillW,
+        pillH,
+        radius
+      );
+      targetCtx.fill();
 
-        const label = formatDistanceLabel(dist);
-
-        const fontSize = LABEL_FONT_SIZE * dpr;
-        targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-        const textWidth = targetCtx.measureText(label).width;
-        const padX = LABEL_PADDING_X * dpr;
-        const padY = LABEL_PADDING_Y * dpr;
-        const pillW = textWidth + padX * 2;
-        const pillH = fontSize + padY * 2;
-        const radius = 4 * dpr;
-
-        targetCtx.fillStyle = bgColor;
-        targetCtx.beginPath();
-        targetCtx.roundRect(midX - pillW / 2, midY - pillH / 2, pillW, pillH, radius);
-        targetCtx.fill();
-
-        targetCtx.fillStyle = '#ffffff'; // White text
-        targetCtx.textAlign = "center";
-        targetCtx.textBaseline = "middle";
-        targetCtx.fillText(label, midX, midY);
-      }
+      // Draw text
+      targetCtx.fillStyle = '#ffffff';
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'middle';
+      targetCtx.fillText(label, x * dpr, y * dpr);
     }
   }
 
