@@ -70,7 +70,9 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
       const coords = feature.geometry.coordinates[0] as [number, number][];
       if (!coords || coords.length < 4) continue;
 
-      const color = type === "lawn" ? "#22c55e" : "#d97706";
+      const bgColor = type === 'lawn'
+        ? 'rgba(34, 197, 94, 0.85)'   // Green for lawn
+        : 'rgba(217, 119, 6, 0.85)';  // Orange for garden
 
       for (let i = 0; i < coords.length - 1; i++) {
         const dist = calcDistanceLocal(coords[i], coords[i + 1]);
@@ -85,8 +87,8 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         const el = document.createElement("div");
         el.className = "edge-label";
         el.style.cssText = `
-          background: rgba(0, 0, 0, 0.75);
-          color: ${color};
+          background: ${bgColor};
+          color: #ffffff;
           padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X * 1.5}px;
           border-radius: 4px;
           font-size: ${LABEL_FONT_SIZE}px;
@@ -262,7 +264,9 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
       const coords = feature.geometry.coordinates[0] as [number, number][];
       if (!coords || coords.length < 4) continue;
 
-      const color = type === "lawn" ? "#22c55e" : "#d97706";
+      const bgColor = type === 'lawn'
+        ? 'rgba(34, 197, 94, 0.85)'
+        : 'rgba(217, 119, 6, 0.85)';
 
       for (let i = 0; i < coords.length - 1; i++) {
         const dist = calcDistanceLocal(coords[i], coords[i + 1]);
@@ -284,12 +288,12 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         const pillH = fontSize + padY * 2;
         const radius = 4 * dpr;
 
-        targetCtx.fillStyle = "rgba(0, 0, 0, 0.65)";
+        targetCtx.fillStyle = bgColor;
         targetCtx.beginPath();
         targetCtx.roundRect(midX - pillW / 2, midY - pillH / 2, pillW, pillH, radius);
         targetCtx.fill();
 
-        targetCtx.fillStyle = color;
+        targetCtx.fillStyle = '#ffffff'; // White text
         targetCtx.textAlign = "center";
         targetCtx.textBaseline = "middle";
         targetCtx.fillText(label, midX, midY);
