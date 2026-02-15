@@ -61,9 +61,10 @@ describe("buildLeadEmailHtml", () => {
     expect(html).toContain("smart-wifi");
   });
 
-  it("includes inline map reference via CID", () => {
+  it("does not include inline map image (map sent as attachment)", () => {
     const html = buildLeadEmailHtml(mockData);
-    expect(html).toContain('cid:map-snapshot');
+    expect(html).not.toContain('cid:map-snapshot');
+    expect(html).not.toContain('Property Map');
   });
 
   it("includes area totals", () => {

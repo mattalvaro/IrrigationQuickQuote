@@ -91,16 +91,6 @@ export function buildLeadEmailHtml(data: LeadEmailData): string {
             </td>
           </tr>
 
-          <!-- Property Map -->
-          <tr>
-            <td style="padding: 30px 40px; border-bottom: 1px solid #e5e5e5; text-align: center;">
-              <h2 style="margin: 0 0 20px 0; color: #132e1f; font-size: 18px; font-weight: 600; text-align: left;">
-                Property Map
-              </h2>
-              <img src="cid:map-snapshot" alt="Property map with marked areas" style="max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #e5e5e5;" />
-            </td>
-          </tr>
-
           <!-- Area Breakdown -->
           <tr>
             <td style="padding: 30px 40px; border-bottom: 1px solid #e5e5e5;">
@@ -243,20 +233,17 @@ export async function sendLeadEmail(
   const attachments: Array<{
     filename: string;
     content: Buffer;
-    cid?: string;
   }> = [];
 
-  // Add map snapshot attachment if provided
+  // Add map snapshot as regular attachment if provided
   if (mapSnapshotBase64) {
     // Strip data URI prefix if present
     const base64Data = mapSnapshotBase64.replace(/^data:image\/png;base64,/, "");
     const imageBuffer = Buffer.from(base64Data, "base64");
 
-    // Inline attachment with edge measurements
     attachments.push({
       filename: "property-map.png",
       content: imageBuffer,
-      cid: "map-snapshot",
     });
   }
 
