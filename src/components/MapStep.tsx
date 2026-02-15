@@ -519,3 +519,55 @@ export function boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
     a.y - a.height / 2 - padding > b.y + b.height / 2
   );
 }
+
+function calculateLabelBoxes(
+  map: MapboxMap,
+  draw: InstanceType<typeof MapboxDraw>,
+  featureTypes: Map<string, 'lawn' | 'garden'>,
+  dpr: number
+): LabelBox[] {
+  const allFeatures = draw.getAll();
+  const boxes: LabelBox[] = [];
+
+  for (const feature of allFeatures.features) {
+    const id = feature.id as string;
+    const type = featureTypes.get(id);
+    if (!type || !feature.geometry || feature.geometry.type !== 'Polygon') continue;
+
+    const coords = feature.geometry.coordinates[0] as [number, number][];
+    if (!coords || coords.length < 4) continue;
+
+    for (let i = 0; i < coords.length - 1; i++) {
+      const dist = calcDistanceLocal(coords[i], coords[i + 1]);
+      if (dist < 0.5) continue; // Skip tiny edges
+
+      const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
+      const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
+      const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+
+      // Calculate pixel position
+      const midPx = map.project([midLng, midLat] as [number, number]);
+
+      // Estimate label dimensions (will be more accurate when rendered)
+      const fontSize = 11 * dpr;
+      const estimatedWidth = (label.length * fontSize * 0.6 + 8 * dpr) / dpr;
+      const estimatedHeight = (fontSize + 6 * dpr) / dpr;
+
+      boxes.push({
+        id: `${id}-edge-${i}`,
+        x: midPx.x,
+        y: midPx.y,
+        width: estimatedWidth,
+        height: estimatedHeight,
+        edgeMidpoint: [midLng, midLat],
+        edgeMidpointPx: [midPx.x, midPx.y],
+        distance: dist,
+        type,
+        finalPosition: [midPx.x, midPx.y], // Start at midpoint
+        needsLeader: false,
+      });
+    }
+  }
+
+  return boxes;
+}
