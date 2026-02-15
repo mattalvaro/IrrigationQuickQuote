@@ -581,3 +581,82 @@ function calculateLabelBoxes(
 
   return boxes;
 }
+
+export function positionLabelsWithGrid(
+  boxes: LabelBox[],
+  canvasWidth: number,
+  canvasHeight: number
+): LabelBox[] {
+  // Sort by priority: longest edges first, lawn before garden
+  const sortedBoxes = [...boxes].sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'lawn' ? -1 : 1;
+    return b.distance - a.distance; // Descending
+  });
+
+  const positioned: LabelBox[] = [];
+  const offset = 40; // pixels
+
+  // 8 directions: N, NE, E, SE, S, SW, W, NW
+  const directions: Array<[number, number]> = [
+    [0, -offset],      // N
+    [offset, -offset], // NE
+    [offset, 0],       // E
+    [offset, offset],  // SE
+    [0, offset],       // S
+    [-offset, offset], // SW
+    [-offset, 0],      // W
+    [-offset, -offset] // NW
+  ];
+
+  for (const box of sortedBoxes) {
+    let placed = false;
+    const [origX, origY] = box.edgeMidpointPx!;
+
+    // Try original position first
+    box.x = origX;
+    box.y = origY;
+    box.finalPosition = [origX, origY];
+    box.needsLeader = false;
+
+    if (!positioned.some(p => boxesOverlap(box, p))) {
+      positioned.push(box);
+      continue;
+    }
+
+    // Try 8 grid positions
+    for (const [dx, dy] of directions) {
+      box.x = origX + dx;
+      box.y = origY + dy;
+      box.finalPosition = [box.x, box.y];
+      box.needsLeader = true;
+
+      // Check canvas bounds
+      const left = box.x - box.width / 2;
+      const right = box.x + box.width / 2;
+      const top = box.y - box.height / 2;
+      const bottom = box.y + box.height / 2;
+
+      if (left < 0 || right > canvasWidth || top < 0 || bottom > canvasHeight) {
+        continue; // Out of bounds
+      }
+
+      if (!positioned.some(p => boxesOverlap(box, p))) {
+        positioned.push(box);
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      // Fallback: keep at original position even if overlapping
+      // Radial spread will be added in next task
+      box.x = origX;
+      box.y = origY;
+      box.finalPosition = [origX, origY];
+      box.needsLeader = false;
+      positioned.push(box);
+    }
+  }
+
+  return positioned;
+}

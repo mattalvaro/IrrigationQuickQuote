@@ -1,6 +1,7 @@
 // src/components/__tests__/MapStep.collision.test.ts
 import { describe, test, expect } from 'vitest';
-import { boxesOverlap } from '../MapStep';
+import { boxesOverlap, positionLabelsWithGrid } from '../MapStep';
+import type { LabelBox } from '../MapStep';
 
 describe('Label collision detection', () => {
   test('boxesOverlap detects overlapping labels', () => {
@@ -38,5 +39,54 @@ describe('Label collision detection', () => {
     const b = { x: 150, y: 100, width: 30, height: 20 };
     // Far apart horizontally, same vertical position
     expect(boxesOverlap(a, b)).toBe(false);
+  });
+
+  test('positionLabelsWithGrid finds valid position in 8-grid', () => {
+    const boxes: LabelBox[] = [
+      {
+        id: 'a',
+        x: 100,
+        y: 100,
+        width: 50,
+        height: 20,
+        edgeMidpoint: [0, 0],
+        edgeMidpointPx: [100, 100],
+        distance: 10,
+        type: 'lawn',
+        finalPosition: [100, 100],
+        needsLeader: false,
+      },
+      {
+        id: 'b',
+        x: 105,
+        y: 102,
+        width: 50,
+        height: 20,
+        edgeMidpoint: [0, 0],
+        edgeMidpointPx: [105, 102],
+        distance: 8,
+        type: 'lawn',
+        finalPosition: [105, 102],
+        needsLeader: false,
+      },
+    ];
+
+    // Verify they overlap before positioning
+    expect(boxesOverlap(boxes[0], boxes[1])).toBe(true);
+
+    const positioned = positionLabelsWithGrid(boxes, 1000, 1000);
+
+    // After sorting, box 'a' (distance 10) comes first, box 'b' (distance 8) second
+    // First positioned box (from 'a') should stay at original position
+    const firstBox = positioned.find(b => b.id === 'a');
+    expect(firstBox!.x).toBe(100);
+    expect(firstBox!.y).toBe(100);
+    expect(firstBox!.needsLeader).toBe(false);
+
+    // Second positioned box (from 'b') should be repositioned due to collision
+    const secondBox = positioned.find(b => b.id === 'b');
+    // Should be moved in at least one direction (x or y)
+    expect(secondBox!.x !== 105 || secondBox!.y !== 102).toBe(true);
+    expect(secondBox!.needsLeader).toBe(true);
   });
 });
