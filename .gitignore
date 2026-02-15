@@ -46,3 +46,7 @@ data/
 
 # widget build output
 /public/widget/
+
+# test files
+test-email.js
+public/mapbox-test.html
