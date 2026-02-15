@@ -84,7 +84,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
       labelEl.style.cssText = `
         background: ${bgColor};
         color: #ffffff;
-        padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X * 1.5}px;
+        padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X}px;
         border-radius: 4px;
         font-size: ${LABEL_FONT_SIZE}px;
         font-weight: bold;
@@ -597,7 +597,7 @@ function calcDistanceLocal(a: [number, number], b: [number, number]): number {
 
 // Label rendering constants
 const LABEL_FONT_SIZE = 11;
-const LABEL_PADDING_X = 4;  // Horizontal padding in pixels
+const LABEL_PADDING_X = 6;  // Horizontal padding in pixels
 const LABEL_PADDING_Y = 3;  // Vertical padding in pixels
 const LABEL_CHAR_WIDTH_RATIO = 0.6; // Rough estimate for character width
 
@@ -747,7 +747,7 @@ export function positionLabelsWithGrid(
         const centroidY = cluster.reduce((sum, b) => sum + b.edgeMidpointPx![1], 0) / cluster.length;
 
         // Apply radial spread
-        radialSpreadCluster(cluster, [centroidX, centroidY]);
+        radialSpreadCluster(cluster, [centroidX, centroidY], canvasWidth, canvasHeight);
         positioned.push(box);
         placed = true;
       }
@@ -766,15 +766,26 @@ export function positionLabelsWithGrid(
   return positioned;
 }
 
-function radialSpreadCluster(cluster: LabelBox[], centroid: [number, number]): void {
+export function radialSpreadCluster(
+  cluster: LabelBox[],
+  centroid: [number, number],
+  canvasWidth: number,
+  canvasHeight: number
+): void {
   const clusterSize = cluster.length;
   const radius = 60 + clusterSize * 10; // Dynamic radius based on cluster size
   const angleStep = (2 * Math.PI) / clusterSize;
 
   cluster.forEach((box, index) => {
     const angle = index * angleStep;
-    const x = centroid[0] + radius * Math.cos(angle);
-    const y = centroid[1] + radius * Math.sin(angle);
+    let x = centroid[0] + radius * Math.cos(angle);
+    let y = centroid[1] + radius * Math.sin(angle);
+
+    // Clamp to canvas bounds
+    const halfW = box.width / 2;
+    const halfH = box.height / 2;
+    x = Math.max(halfW, Math.min(canvasWidth - halfW, x));
+    y = Math.max(halfH, Math.min(canvasHeight - halfH, y));
 
     box.x = x;
     box.y = y;

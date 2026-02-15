@@ -1,7 +1,6 @@
 // src/components/__tests__/MapStep.collision.test.ts
 import { describe, test, expect } from 'vitest';
-import { boxesOverlap, positionLabelsWithGrid } from '../MapStep';
-import type { LabelBox } from '../MapStep';
+import { boxesOverlap, positionLabelsWithGrid, radialSpreadCluster, type LabelBox } from '../MapStep';
 
 describe('Label collision detection', () => {
   test('boxesOverlap detects overlapping labels', () => {
@@ -88,5 +87,30 @@ describe('Label collision detection', () => {
     // Should be moved in at least one direction (x or y)
     expect(secondBox!.x !== 105 || secondBox!.y !== 102).toBe(true);
     expect(secondBox!.needsLeader).toBe(true);
+  });
+
+  test('radialSpreadCluster distributes labels evenly', () => {
+    const cluster: LabelBox[] = [
+      { id: 'a', x: 500, y: 500, width: 50, height: 20, edgeMidpoint: [0, 0], edgeMidpointPx: [500, 500], distance: 5, type: 'lawn', finalPosition: [500, 500], needsLeader: false },
+      { id: 'b', x: 502, y: 501, width: 50, height: 20, edgeMidpoint: [0, 0], edgeMidpointPx: [502, 501], distance: 6, type: 'lawn', finalPosition: [502, 501], needsLeader: false },
+      { id: 'c', x: 501, y: 502, width: 50, height: 20, edgeMidpoint: [0, 0], edgeMidpointPx: [501, 502], distance: 7, type: 'lawn', finalPosition: [501, 502], needsLeader: false },
+      { id: 'd', x: 503, y: 503, width: 50, height: 20, edgeMidpoint: [0, 0], edgeMidpointPx: [503, 503], distance: 8, type: 'lawn', finalPosition: [503, 503], needsLeader: false },
+    ];
+
+    const centroid: [number, number] = [501.5, 501.5];
+    radialSpreadCluster(cluster, centroid, 1000, 1000);
+
+    cluster.forEach(box => expect(box.needsLeader).toBe(true));
+
+    const positions = cluster.map(b => `${b.x},${b.y}`);
+    expect(new Set(positions).size).toBe(4);
+
+    const distances = cluster.map(box => {
+      const dx = box.x - centroid[0];
+      const dy = box.y - centroid[1];
+      return Math.sqrt(dx * dx + dy * dy);
+    });
+    const expectedRadius = 60 + 4 * 10;
+    distances.forEach(d => expect(d).toBeCloseTo(expectedRadius, 1));
   });
 });
