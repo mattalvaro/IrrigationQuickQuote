@@ -79,7 +79,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
         const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
 
-        const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+        const label = formatDistanceLabel(dist);
 
         // Create HTML element for the marker
         const el = document.createElement("div");
@@ -87,9 +87,9 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         el.style.cssText = `
           background: rgba(0, 0, 0, 0.75);
           color: ${color};
-          padding: 3px 6px;
+          padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X * 1.5}px;
           border-radius: 4px;
-          font-size: 11px;
+          font-size: ${LABEL_FONT_SIZE}px;
           font-weight: bold;
           font-family: 'Plus Jakarta Sans', sans-serif;
           white-space: nowrap;
@@ -273,13 +273,13 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
         const midX = ((pxA.x + pxB.x) / 2) * dpr;
         const midY = ((pxA.y + pxB.y) / 2) * dpr;
 
-        const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+        const label = formatDistanceLabel(dist);
 
-        const fontSize = 11 * dpr;
+        const fontSize = LABEL_FONT_SIZE * dpr;
         targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
         const textWidth = targetCtx.measureText(label).width;
-        const padX = 4 * dpr;
-        const padY = 3 * dpr;
+        const padX = LABEL_PADDING_X * dpr;
+        const padY = LABEL_PADDING_Y * dpr;
         const pillW = textWidth + padX * 2;
         const pillH = fontSize + padY * 2;
         const radius = 4 * dpr;
@@ -508,6 +508,16 @@ function calcDistanceLocal(a: [number, number], b: [number, number]): number {
   return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(h));
 }
 
+// Label rendering constants
+const LABEL_FONT_SIZE = 11;
+const LABEL_PADDING_X = 4;  // Horizontal padding in pixels
+const LABEL_PADDING_Y = 3;  // Vertical padding in pixels
+const LABEL_CHAR_WIDTH_RATIO = 0.6; // Rough estimate for character width
+
+function formatDistanceLabel(dist: number): string {
+  return dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+}
+
 type BoundingBox = Pick<LabelBox, 'x' | 'y' | 'width' | 'height'>;
 
 export function boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
@@ -543,15 +553,15 @@ function calculateLabelBoxes(
 
       const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
       const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
-      const label = dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
+      const label = formatDistanceLabel(dist);
 
       // Calculate pixel position
       const midPx = map.project([midLng, midLat] as [number, number]);
 
-      // Estimate label dimensions (will be more accurate when rendered)
-      const fontSize = 11 * dpr;
-      const estimatedWidth = (label.length * fontSize * 0.6 + 8 * dpr) / dpr;
-      const estimatedHeight = (fontSize + 6 * dpr) / dpr;
+      // Estimate label dimensions (rough approximation; actual width from measureText may differ)
+      const fontSize = LABEL_FONT_SIZE * dpr;
+      const estimatedWidth = (label.length * fontSize * LABEL_CHAR_WIDTH_RATIO + LABEL_PADDING_X * 2 * dpr) / dpr;
+      const estimatedHeight = (fontSize + LABEL_PADDING_Y * 2 * dpr) / dpr;
 
       boxes.push({
         id: `${id}-edge-${i}`,
