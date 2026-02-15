@@ -33,6 +33,14 @@
 - Path alias: `@/*` → `./src/*`
 - Tests: Vitest + jsdom + @testing-library/react
 
+### Measurement Label Collision Detection
+- Grid-based collision avoidance with 8-direction positioning (40px offset)
+- Radial spread fallback for dense clusters (4+ overlapping labels)
+- Leader lines (CAD-style) connect repositioned labels to edge midpoints
+- Visual styling: green backgrounds for lawn, orange for garden (white text)
+- Identical behavior in live app (Mapbox markers) and email snapshots (canvas rendering)
+- 8px minimum padding between labels, canvas bounds checking
+
 ## Conventions
 - Components: named exports in PascalCase files (`ProductSelectionStep.tsx`)
 - Tests: colocated in `__tests__/` directories next to source
@@ -44,3 +52,4 @@
 - Do NOT import mapbox-gl via npm — use the CDN globals only
 - Mapbox token format starts with `pk.eyJ...` — don't double-prefix
 - Plain `<script>` tags in layout.tsx don't load reliably — use `next/script`
+- Collision detection helpers (`boxesOverlap`, `positionLabelsWithGrid`, `radialSpreadCluster`) are exported from MapStep for testing — don't duplicate this logic
