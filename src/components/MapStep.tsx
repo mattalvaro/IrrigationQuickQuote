@@ -648,8 +648,26 @@ export function positionLabelsWithGrid(
     }
 
     if (!placed) {
-      // Fallback: keep at original position even if overlapping
-      // Radial spread will be added in next task
+      // Collect all overlapping labels into a cluster
+      const overlapping = positioned.filter(p => boxesOverlap(box, p));
+
+      if (overlapping.length >= 3) {
+        // Form a cluster with this box and overlapping boxes
+        const cluster = [...overlapping, box];
+
+        // Calculate centroid
+        const centroidX = cluster.reduce((sum, b) => sum + b.edgeMidpointPx![0], 0) / cluster.length;
+        const centroidY = cluster.reduce((sum, b) => sum + b.edgeMidpointPx![1], 0) / cluster.length;
+
+        // Apply radial spread
+        radialSpreadCluster(cluster, [centroidX, centroidY]);
+        positioned.push(box);
+        placed = true;
+      }
+    }
+
+    if (!placed) {
+      // Still couldn't place - keep at original position
       box.x = origX;
       box.y = origY;
       box.finalPosition = [origX, origY];
@@ -659,4 +677,21 @@ export function positionLabelsWithGrid(
   }
 
   return positioned;
+}
+
+function radialSpreadCluster(cluster: LabelBox[], centroid: [number, number]): void {
+  const clusterSize = cluster.length;
+  const radius = 60 + clusterSize * 10; // Dynamic radius based on cluster size
+  const angleStep = (2 * Math.PI) / clusterSize;
+
+  cluster.forEach((box, index) => {
+    const angle = index * angleStep;
+    const x = centroid[0] + radius * Math.cos(angle);
+    const y = centroid[1] + radius * Math.sin(angle);
+
+    box.x = x;
+    box.y = y;
+    box.finalPosition = [x, y];
+    box.needsLeader = true;
+  });
 }
