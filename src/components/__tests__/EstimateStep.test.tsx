@@ -22,19 +22,15 @@ const mockData: WizardData = {
 describe("EstimateStep", () => {
   it("displays the total estimate", () => {
     render(<EstimateStep data={mockData} />);
-    // lawn 1500 + garden 720 + lawnSprinkler 180 + gardenSprinkler 180 + lawnNozzle 90 + gardenNozzle 90 + controller 250 + base 150 = 3160
-    expect(screen.getByText(/\$3,160/)).toBeInTheDocument();
+    // lawn 120×6.50=780 + garden 40×6.50=260 + sprinklers/nozzles/digitalTimer=0 + base 150 = 1190
+    expect(screen.getByText(/\$1,190/)).toBeInTheDocument();
   });
 
   it("displays line items", () => {
     render(<EstimateStep data={mockData} />);
     expect(screen.getByText(/lawn irrigation/i)).toBeInTheDocument();
     expect(screen.getByText(/garden irrigation/i)).toBeInTheDocument();
-    expect(screen.getByText(/lawn sprinkler type/i)).toBeInTheDocument();
-    expect(screen.getByText(/garden sprinkler type/i)).toBeInTheDocument();
-    expect(screen.getByText(/lawn nozzle type/i)).toBeInTheDocument();
-    expect(screen.getByText(/garden nozzle type/i)).toBeInTheDocument();
-    expect(screen.getByText(/controller/i)).toBeInTheDocument();
+    expect(screen.getByText(/base cost/i)).toBeInTheDocument();
   });
 
   it("displays the guide price disclaimer", () => {

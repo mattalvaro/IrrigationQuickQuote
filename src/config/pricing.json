@@ -1,34 +1,34 @@
 {
-  "lawn": { "ratePerSqm": 12.50, "label": "Lawn Irrigation" },
-  "garden": { "ratePerSqm": 18.00, "label": "Garden Irrigation" },
+  "lawn": { "ratePerSqm": 6.50, "label": "Lawn Irrigation" },
+  "garden": { "ratePerSqm": 6.50, "label": "Garden Irrigation" },
   "lawnSprinkler": {
-    "popUp": { "cost": 180, "label": "Pop-up Sprinklers" },
-    "rotor": { "cost": 320, "label": "Rotor Sprinklers" },
-    "dripLine": { "cost": 220, "label": "Drip Line" },
+    "popUp": { "cost": 0, "label": "Pop-up Sprinklers" },
+    "rotor": { "cost": 0, "label": "Rotor Sprinklers" },
+    "dripLine": { "cost": 0, "label": "Drip Line" },
     "label": "Lawn Sprinkler Type"
   },
   "gardenSprinkler": {
-    "popUp": { "cost": 180, "label": "Pop-up Sprinklers" },
-    "rotor": { "cost": 320, "label": "Rotor Sprinklers" },
-    "dripLine": { "cost": 220, "label": "Drip Line" },
-    "microSpray": { "cost": 150, "label": "Micro-spray" },
+    "popUp": { "cost": 0, "label": "Pop-up Sprinklers" },
+    "rotor": { "cost": 0, "label": "Rotor Sprinklers" },
+    "dripLine": { "cost": 0, "label": "Drip Line" },
+    "microSpray": { "cost": 0, "label": "Micro-spray" },
     "label": "Garden Sprinkler Type"
   },
   "lawnNozzle": {
-    "fixedSpray": { "cost": 90, "label": "Fixed Spray" },
-    "adjustable": { "cost": 120, "label": "Adjustable" },
+    "fixedSpray": { "cost": 0, "label": "Fixed Spray" },
+    "adjustable": { "cost": 0, "label": "Adjustable" },
     "mpRotator": { "cost": 180, "label": "MP Rotator" },
     "label": "Lawn Nozzle Type"
   },
   "gardenNozzle": {
-    "fixedSpray": { "cost": 90, "label": "Fixed Spray" },
-    "adjustable": { "cost": 120, "label": "Adjustable" },
+    "fixedSpray": { "cost": 0, "label": "Fixed Spray" },
+    "adjustable": { "cost": 0, "label": "Adjustable" },
     "mpRotator": { "cost": 180, "label": "MP Rotator" },
     "label": "Garden Nozzle Type"
   },
   "controller": {
     "manualTapTimer": { "cost": 0, "label": "Manual Tap Timer" },
-    "digitalTimer": { "cost": 250, "label": "Digital Timer" },
+    "digitalTimer": { "cost": 0, "label": "Digital Timer" },
     "smartWifi": { "cost": 450, "label": "Smart Wi-Fi Controller" },
     "label": "Controller/Timer"
   },
