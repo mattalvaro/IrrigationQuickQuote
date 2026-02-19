@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type RefObject } from "react";
 import type { Map as MapboxMap, NavigationControl, IControl } from "mapbox-gl";
 import { WizardData } from "@/lib/types";
 import { calcDistance, calcArea } from "@/lib/geo";
@@ -29,9 +29,10 @@ type DrawingMode = "lawn" | "garden" | null;
 interface MapStepProps {
   data: WizardData;
   onUpdate: (partial: Partial<WizardData>) => void;
+  snapshotRef?: RefObject<(() => string | null) | null>;
 }
 
-export function MapStep({ data, onUpdate }: MapStepProps) {
+export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const drawRef = useRef<InstanceType<typeof MapboxDraw> | null>(null);
@@ -66,9 +67,11 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     const dpr = window.devicePixelRatio || 1;
     const boxes = calculateLabelBoxes(map, draw, featureTypes.current, dpr);
 
-    // Position labels with collision detection
+    // Position labels with collision detection (use CSS pixels, not device pixels)
     const canvas = map.getCanvas();
-    const positioned = positionLabelsWithGrid(boxes, canvas.width, canvas.height);
+    const cssWidth = canvas.width / dpr;
+    const cssHeight = canvas.height / dpr;
+    const positioned = positionLabelsWithGrid(boxes, cssWidth, cssHeight);
 
     // Create markers at final positions
     for (const box of positioned) {
@@ -224,6 +227,9 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
     map.addControl(draw as unknown as IControl, "top-left");
+
+    // Re-render edge labels after pan/zoom so leader lines stay correct
+    map.on("moveend", () => updateEdgeLabels());
 
     map.on("draw.create", (e: { features: Array<{ id: string }> }) => {
       const currentMode = drawingModeRef.current;
@@ -413,14 +419,13 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     return tempCanvas.toDataURL("image/png");
   }
 
+  // Expose captureSnapshot to parent via ref
   useEffect(() => {
-    const handleBeforeNext = () => {
-      const snapshot = captureSnapshot();
-      if (snapshot) onUpdate({ mapSnapshot: snapshot });
-    };
-    window.addEventListener("wizard:beforeNext", handleBeforeNext);
-    return () => window.removeEventListener("wizard:beforeNext", handleBeforeNext);
-  }, [onUpdate]);
+    if (snapshotRef) {
+      snapshotRef.current = captureSnapshot;
+      return () => { snapshotRef.current = null; };
+    }
+  }, [snapshotRef]);
 
   // Cleanup edge markers on unmount
   useEffect(() => {

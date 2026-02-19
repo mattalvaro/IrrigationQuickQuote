@@ -44,6 +44,7 @@ export function Wizard() {
   const [transitioning, setTransitioning] = useState(false);
   const [animKey, setAnimKey] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const mapSnapshotRef = useRef<(() => string | null) | null>(null);
 
   const activeSteps = useMemo(() => {
     return STEP_ORDER.filter((step) => {
@@ -69,8 +70,11 @@ export function Wizard() {
   }
 
   function next() {
-    if (currentStep === "map") {
-      window.dispatchEvent(new Event("wizard:beforeNext"));
+    if (currentStep === "map" && mapSnapshotRef.current) {
+      const snapshot = mapSnapshotRef.current();
+      if (snapshot) {
+        setData((prev) => ({ ...prev, mapSnapshot: snapshot }));
+      }
     }
     if (!isLast) animateTransition(stepIndex + 1);
   }
@@ -198,7 +202,7 @@ export function Wizard() {
         >
           <div key={animKey} className="animate-step-in">
             {currentStep === "welcome" && <WelcomeStep />}
-            {currentStep === "map" && <MapStep data={data} onUpdate={updateData} />}
+            {currentStep === "map" && <MapStep data={data} onUpdate={updateData} snapshotRef={mapSnapshotRef} />}
             {currentStep === "lawnSprinklerType" && (
               <ProductSelectionStep
                 title="Choose Lawn Sprinklers"
