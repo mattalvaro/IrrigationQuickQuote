@@ -418,68 +418,67 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
 
   function annotateCanvas(targetCanvas: HTMLCanvasElement, targetCtx: CanvasRenderingContext2D) {
     const map = mapRef.current;
-    const draw = drawRef.current;
-    if (!map || !draw) return;
+    if (!map) return;
 
     const dpr = window.devicePixelRatio || 1;
 
-    // Calculate label boxes in canvas coordinates
-    const boxes = calculateLabelBoxes(map, draw, featureTypes.current, dpr);
+    // --- Scale bar: calculate 10m in pixels ---
+    const center = map.getCenter();
+    // Project center and a point 10m east of center
+    const centerPx = map.project(center);
+    // 10m in degrees longitude at this latitude
+    const metersPerDegreeLng = 111320 * Math.cos((center.lat * Math.PI) / 180);
+    const deltaLng = 10 / metersPerDegreeLng;
+    const offsetPx = map.project([center.lng + deltaLng, center.lat]);
+    const barLengthPx = Math.abs(offsetPx.x - centerPx.x) * dpr;
 
-    // Position labels with collision detection
-    const positioned = positionLabelsWithGrid(boxes, targetCanvas.width, targetCanvas.height);
+    // --- Scale bar: draw in bottom-right corner ---
+    const margin = 20 * dpr;
+    const endCapHeight = 8 * dpr;
+    const lineWidth = 2 * dpr;
+    const fontSize = 11 * dpr;
 
-    // Draw leader lines first (behind labels) — always shown for every label
-    for (const box of positioned) {
-      const lineColor = box.type === 'lawn' ? '#22c55e' : '#d97706';
-      const [startX, startY] = box.edgeMidpointPx!;
-      const [endX, endY] = box.finalPosition!;
+    const barRight = targetCanvas.width - margin;
+    const barLeft = barRight - barLengthPx;
+    const barY = targetCanvas.height - margin;
 
-      // Draw line
-      targetCtx.strokeStyle = lineColor;
-      targetCtx.lineWidth = 1.5 * dpr;
-      targetCtx.globalAlpha = 0.7;
-      targetCtx.beginPath();
-      targetCtx.moveTo(startX * dpr, startY * dpr);
-      targetCtx.lineTo(endX * dpr, endY * dpr);
-      targetCtx.stroke();
-      targetCtx.globalAlpha = 1.0;
+    // Shadow for contrast on satellite imagery
+    targetCtx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    targetCtx.shadowBlur = 4 * dpr;
+    targetCtx.shadowOffsetX = 0;
+    targetCtx.shadowOffsetY = 0;
 
-      // Draw endpoint dot
-      targetCtx.fillStyle = lineColor;
-      targetCtx.strokeStyle = '#ffffff';
-      targetCtx.lineWidth = 1 * dpr;
-      targetCtx.beginPath();
-      targetCtx.arc(startX * dpr, startY * dpr, 3 * dpr, 0, 2 * Math.PI);
-      targetCtx.fill();
-      targetCtx.stroke();
-    }
+    // Draw horizontal bar
+    targetCtx.strokeStyle = '#ffffff';
+    targetCtx.lineWidth = lineWidth;
+    targetCtx.lineCap = 'butt';
+    targetCtx.beginPath();
+    targetCtx.moveTo(barLeft, barY);
+    targetCtx.lineTo(barRight, barY);
+    targetCtx.stroke();
 
-    // Draw labels on top — white bold text with shadow (no background)
-    for (const box of positioned) {
-      const [x, y] = box.finalPosition!;
-      const label = formatDistanceLabel(box.distance);
+    // Draw left end cap
+    targetCtx.beginPath();
+    targetCtx.moveTo(barLeft, barY - endCapHeight / 2);
+    targetCtx.lineTo(barLeft, barY + endCapHeight / 2);
+    targetCtx.stroke();
 
-      const fontSize = LABEL_FONT_SIZE * dpr;
-      targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-      targetCtx.textAlign = 'center';
-      targetCtx.textBaseline = 'middle';
+    // Draw right end cap
+    targetCtx.beginPath();
+    targetCtx.moveTo(barRight, barY - endCapHeight / 2);
+    targetCtx.lineTo(barRight, barY + endCapHeight / 2);
+    targetCtx.stroke();
 
-      // Text shadow for readability on satellite imagery
-      targetCtx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-      targetCtx.shadowBlur = 4 * dpr;
-      targetCtx.shadowOffsetX = 0;
-      targetCtx.shadowOffsetY = 1 * dpr;
+    // Draw "10m" label centered above bar
+    targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+    targetCtx.textAlign = 'center';
+    targetCtx.textBaseline = 'bottom';
+    targetCtx.fillStyle = '#ffffff';
+    targetCtx.fillText('10m', (barLeft + barRight) / 2, barY - endCapHeight / 2 - 2 * dpr);
 
-      targetCtx.fillStyle = '#ffffff';
-      targetCtx.fillText(label, x * dpr, y * dpr);
-
-      // Reset shadow
-      targetCtx.shadowColor = 'transparent';
-      targetCtx.shadowBlur = 0;
-      targetCtx.shadowOffsetX = 0;
-      targetCtx.shadowOffsetY = 0;
-    }
+    // Reset shadow
+    targetCtx.shadowColor = 'transparent';
+    targetCtx.shadowBlur = 0;
   }
 
   function captureSnapshot(): string | null {
