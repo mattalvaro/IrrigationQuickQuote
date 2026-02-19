@@ -586,6 +586,15 @@ function calculateLabelBoxes(
     const coords = feature.geometry.coordinates[0] as [number, number][];
     if (!coords || coords.length < 4) continue;
 
+    // Compute polygon centroid in pixel coords for outward direction
+    const verticesPx = coords.slice(0, -1).map(c => map.project(c as [number, number]));
+    const centroidPx = {
+      x: verticesPx.reduce((sum, p) => sum + p.x, 0) / verticesPx.length,
+      y: verticesPx.reduce((sum, p) => sum + p.y, 0) / verticesPx.length,
+    };
+
+    const OUTWARD_OFFSET = 20;
+
     for (let i = 0; i < coords.length - 1; i++) {
       const dist = calcDistance(coords[i], coords[i + 1]);
       if (dist < 0.5) continue; // Skip tiny edges
@@ -597,6 +606,29 @@ function calculateLabelBoxes(
       // Calculate pixel position
       const midPx = map.project([midLng, midLat] as [number, number]);
 
+      // Compute outward perpendicular normal for this edge
+      const aPx = verticesPx[i];
+      const bPx = verticesPx[(i + 1) % verticesPx.length];
+      let nx = -(bPx.y - aPx.y);
+      let ny = bPx.x - aPx.x;
+      const nLen = Math.sqrt(nx * nx + ny * ny);
+      if (nLen > 0) {
+        nx /= nLen;
+        ny /= nLen;
+      }
+
+      // Flip normal to point away from centroid (outward)
+      const toCentroidX = centroidPx.x - midPx.x;
+      const toCentroidY = centroidPx.y - midPx.y;
+      if (nx * toCentroidX + ny * toCentroidY > 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+
+      // Offset label position outward from the edge midpoint
+      const offsetX = midPx.x + nx * OUTWARD_OFFSET;
+      const offsetY = midPx.y + ny * OUTWARD_OFFSET;
+
       // Estimate label dimensions (rough approximation; actual width from measureText may differ)
       const fontSize = LABEL_FONT_SIZE * dpr;
       const estimatedWidth = (label.length * fontSize * LABEL_CHAR_WIDTH_RATIO + LABEL_PADDING_X * 2 * dpr) / dpr;
@@ -604,16 +636,17 @@ function calculateLabelBoxes(
 
       boxes.push({
         id: `${id}-edge-${i}`,
-        x: midPx.x,
-        y: midPx.y,
+        x: offsetX,
+        y: offsetY,
         width: estimatedWidth,
         height: estimatedHeight,
         edgeMidpoint: [midLng, midLat],
         edgeMidpointPx: [midPx.x, midPx.y],
         distance: dist,
         type,
-        finalPosition: [midPx.x, midPx.y], // Start at midpoint
-        needsLeader: false,
+        finalPosition: [offsetX, offsetY],
+        needsLeader: true,
+        outwardDirection: [nx, ny],
       });
     }
   }

@@ -113,4 +113,44 @@ describe('Label collision detection', () => {
     const expectedRadius = 60 + 4 * 10;
     distances.forEach(d => expect(d).toBeCloseTo(expectedRadius, 1));
   });
+
+  test('positionLabelsWithGrid biases collision resolution toward outward direction', () => {
+    // Two overlapping boxes, second has outwardDirection pointing right (+x)
+    const boxes: LabelBox[] = [
+      {
+        id: 'a',
+        x: 300,
+        y: 300,
+        width: 50,
+        height: 20,
+        edgeMidpoint: [0, 0],
+        edgeMidpointPx: [290, 300],
+        distance: 10,
+        type: 'lawn',
+        needsLeader: true,
+        outwardDirection: [1, 0],
+      },
+      {
+        id: 'b',
+        x: 305,
+        y: 302,
+        width: 50,
+        height: 20,
+        edgeMidpoint: [0, 0],
+        edgeMidpointPx: [295, 302],
+        distance: 8,
+        type: 'lawn',
+        needsLeader: true,
+        outwardDirection: [1, 0], // outward = right
+      },
+    ];
+
+    const positioned = positionLabelsWithGrid(boxes, 1000, 1000);
+    const movedBox = positioned.find(b => b.id === 'b')!;
+
+    // The moved box should have been displaced to the right (positive x direction)
+    // since the outward direction is [1, 0] and that direction is tried first
+    expect(movedBox.x).toBeGreaterThan(305);
+    expect(movedBox.needsLeader).toBe(true);
+  });
 });

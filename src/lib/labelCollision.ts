@@ -10,6 +10,7 @@ export interface LabelBox {
   type: 'lawn' | 'garden';
   finalPosition?: [number, number];
   needsLeader?: boolean;
+  outwardDirection?: [number, number];
 }
 
 // Label rendering constants
@@ -60,19 +61,26 @@ export function positionLabelsWithGrid(
 
   for (const box of sortedBoxes) {
     let placed = false;
-    const [origX, origY] = box.edgeMidpointPx!;
-
-    box.x = origX;
-    box.y = origY;
+    // Use the pre-set position (may already be offset outward from midpoint)
+    const origX = box.x;
+    const origY = box.y;
     box.finalPosition = [origX, origY];
-    box.needsLeader = false;
 
     if (!positioned.some(p => boxesOverlap(box, p))) {
       positioned.push(box);
       continue;
     }
 
-    for (const [dx, dy] of directions) {
+    // Sort directions so outward-facing ones are tried first
+    const sortedDirections = box.outwardDirection
+      ? [...directions].sort((a, b) => {
+          const dotA = a[0] * box.outwardDirection![0] + a[1] * box.outwardDirection![1];
+          const dotB = b[0] * box.outwardDirection![0] + b[1] * box.outwardDirection![1];
+          return dotB - dotA; // Higher dot product = more aligned with outward
+        })
+      : directions;
+
+    for (const [dx, dy] of sortedDirections) {
       box.x = origX + dx;
       box.y = origY + dy;
       box.finalPosition = [box.x, box.y];
@@ -111,7 +119,6 @@ export function positionLabelsWithGrid(
       box.x = origX;
       box.y = origY;
       box.finalPosition = [origX, origY];
-      box.needsLeader = false;
       positioned.push(box);
     }
   }
