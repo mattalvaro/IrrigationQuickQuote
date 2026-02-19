@@ -6,9 +6,7 @@ import { WizardData } from "@/lib/types";
 import { calcDistance, calcArea } from "@/lib/geo";
 import {
   type LabelBox,
-  boxesOverlap,
   positionLabelsWithGrid,
-  radialSpreadCluster,
   formatDistanceLabel,
   LABEL_FONT_SIZE,
   LABEL_PADDING_X,
