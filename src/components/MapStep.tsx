@@ -256,6 +256,78 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: { polygon: false, trash: true },
+      userProperties: true,
+      styles: [
+        // Polygon fill — subtle tint
+        {
+          id: 'gl-draw-polygon-fill',
+          type: 'fill',
+          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+          paint: {
+            'fill-color': [
+              'case',
+              ['==', ['get', 'user_areaType'], 'lawn'], '#22c55e',
+              ['==', ['get', 'user_areaType'], 'garden'], '#d97706',
+              '#3bb2d0', // default (during drawing before type is assigned)
+            ],
+            'fill-opacity': 0.15,
+          },
+        },
+        // Polygon outline
+        {
+          id: 'gl-draw-polygon-stroke-active',
+          type: 'line',
+          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+          paint: {
+            'line-color': [
+              'case',
+              ['==', ['get', 'user_areaType'], 'lawn'], '#22c55e',
+              ['==', ['get', 'user_areaType'], 'garden'], '#d97706',
+              '#3bb2d0',
+            ],
+            'line-width': 2.5,
+            'line-dasharray': [2, 1],
+          },
+        },
+        // Vertex points
+        {
+          id: 'gl-draw-point',
+          type: 'circle',
+          filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'vertex']],
+          paint: {
+            'circle-radius': 5,
+            'circle-color': '#ffffff',
+            'circle-stroke-color': [
+              'case',
+              ['==', ['get', 'user_areaType'], 'lawn'], '#22c55e',
+              ['==', ['get', 'user_areaType'], 'garden'], '#d97706',
+              '#3bb2d0',
+            ],
+            'circle-stroke-width': 2,
+          },
+        },
+        // Midpoints (shown when editing)
+        {
+          id: 'gl-draw-point-midpoint',
+          type: 'circle',
+          filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+          paint: {
+            'circle-radius': 3,
+            'circle-color': '#3bb2d0',
+          },
+        },
+        // Line while drawing
+        {
+          id: 'gl-draw-line',
+          type: 'line',
+          filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+          paint: {
+            'line-color': '#3bb2d0',
+            'line-width': 2,
+            'line-dasharray': [2, 1],
+          },
+        },
+      ],
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -269,6 +341,8 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
       if (currentMode) {
         for (const feature of e.features) {
           featureTypes.current.set(feature.id, currentMode);
+          // Set user property so draw styles can color by area type
+          draw.setFeatureProperty(feature.id, 'areaType', currentMode);
         }
       }
       updateAreas();
