@@ -54,12 +54,19 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
   const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
   const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
 
+  const LEADER_SOURCE_ID = 'edge-leader-lines';
+  const LEADER_LAYER_LAWN = 'edge-leader-layer-lawn';
+  const LEADER_LAYER_GARDEN = 'edge-leader-layer-garden';
+  const DOT_SOURCE_ID = 'edge-leader-dots';
+  const DOT_LAYER_LAWN = 'edge-dot-layer-lawn';
+  const DOT_LAYER_GARDEN = 'edge-dot-layer-garden';
+
   const updateEdgeLabels = useCallback(() => {
     const map = mapRef.current;
     const draw = drawRef.current;
     if (!map || !draw) return;
 
-    // Remove all existing markers
+    // Remove all existing label markers
     edgeMarkersRef.current.forEach((marker) => marker.remove());
     edgeMarkersRef.current = [];
 
@@ -73,17 +80,21 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     const cssHeight = canvas.height / dpr;
     const positioned = positionLabelsWithGrid(boxes, cssWidth, cssHeight);
 
-    // Create markers at final positions
+    // Build GeoJSON for leader lines and dots
+    const lineFeatures: GeoJSON.Feature[] = [];
+    const dotFeatures: GeoJSON.Feature[] = [];
+
     for (const box of positioned) {
       const [finalX, finalY] = box.finalPosition!;
       const finalLngLat = map.unproject([finalX, finalY]);
       const label = formatDistanceLabel(box.distance);
+      const [midLng, midLat] = box.edgeMidpoint;
 
       const bgColor = box.type === 'lawn'
         ? 'rgba(34, 197, 94, 0.85)'
         : 'rgba(217, 119, 6, 0.85)';
 
-      // Create label element
+      // Create label marker
       const labelEl = document.createElement('div');
       labelEl.className = 'edge-label';
       labelEl.style.cssText = `
@@ -103,72 +114,94 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
       const marker = new mapboxgl.Marker({ element: labelEl, anchor: 'center' })
         .setLngLat(finalLngLat)
         .addTo(map);
-
       edgeMarkersRef.current.push(marker);
 
-      // Add leader line if needed
-      if (box.needsLeader) {
-        const lineColor = box.type === 'lawn' ? '#22c55e' : '#d97706';
-        const [midLng, midLat] = box.edgeMidpoint;
+      // Leader line from edge midpoint to label (GeoJSON)
+      lineFeatures.push({
+        type: 'Feature',
+        properties: { areaType: box.type },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [midLng, midLat],
+            [finalLngLat.lng, finalLngLat.lat],
+          ],
+        },
+      });
 
-        // Create SVG line element
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.style.cssText = `
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-          overflow: visible;
-        `;
+      // Dot at edge midpoint (GeoJSON)
+      dotFeatures.push({
+        type: 'Feature',
+        properties: { areaType: box.type },
+        geometry: {
+          type: 'Point',
+          coordinates: [midLng, midLat],
+        },
+      });
+    }
 
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    // Update or create leader line source/layers
+    const lineGeoJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: lineFeatures };
+    const dotGeoJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: dotFeatures };
 
-        // Convert coordinates to pixel positions for SVG
-        const startPx = map.project([midLng, midLat]);
-        const endPx = map.project(finalLngLat);
+    const lineSource = map.getSource(LEADER_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    if (lineSource) {
+      lineSource.setData(lineGeoJSON);
+    } else {
+      map.addSource(LEADER_SOURCE_ID, { type: 'geojson', data: lineGeoJSON });
+      map.addLayer({
+        id: LEADER_LAYER_LAWN,
+        type: 'line',
+        source: LEADER_SOURCE_ID,
+        filter: ['==', ['get', 'areaType'], 'lawn'],
+        paint: {
+          'line-color': '#22c55e',
+          'line-width': 1.5,
+          'line-opacity': 0.8,
+        },
+      });
+      map.addLayer({
+        id: LEADER_LAYER_GARDEN,
+        type: 'line',
+        source: LEADER_SOURCE_ID,
+        filter: ['==', ['get', 'areaType'], 'garden'],
+        paint: {
+          'line-color': '#d97706',
+          'line-width': 1.5,
+          'line-opacity': 0.8,
+        },
+      });
+    }
 
-        line.setAttribute('x1', startPx.x.toString());
-        line.setAttribute('y1', startPx.y.toString());
-        line.setAttribute('x2', endPx.x.toString());
-        line.setAttribute('y2', endPx.y.toString());
-        line.setAttribute('stroke', lineColor);
-        line.setAttribute('stroke-width', '1.5');
-        line.setAttribute('opacity', '0.7');
-
-        svg.appendChild(line);
-
-        // Create a marker for the SVG
-        const svgContainer = document.createElement('div');
-        svgContainer.appendChild(svg);
-
-        const lineMarker = new mapboxgl.Marker({
-          element: svgContainer,
-          anchor: 'center'
-        })
-          .setLngLat([midLng, midLat])
-          .addTo(map);
-
-        edgeMarkersRef.current.push(lineMarker);
-
-        // Create endpoint dot
-        const dotEl = document.createElement('div');
-        dotEl.style.cssText = `
-          width: 6px;
-          height: 6px;
-          background: ${lineColor};
-          border: 1px solid white;
-          border-radius: 50%;
-          pointer-events: none;
-        `;
-
-        const dotMarker = new mapboxgl.Marker({ element: dotEl, anchor: 'center' })
-          .setLngLat([midLng, midLat])
-          .addTo(map);
-
-        edgeMarkersRef.current.push(dotMarker);
-      }
+    const dotSource = map.getSource(DOT_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+    if (dotSource) {
+      dotSource.setData(dotGeoJSON);
+    } else {
+      map.addSource(DOT_SOURCE_ID, { type: 'geojson', data: dotGeoJSON });
+      map.addLayer({
+        id: DOT_LAYER_LAWN,
+        type: 'circle',
+        source: DOT_SOURCE_ID,
+        filter: ['==', ['get', 'areaType'], 'lawn'],
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#22c55e',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+        },
+      });
+      map.addLayer({
+        id: DOT_LAYER_GARDEN,
+        type: 'circle',
+        source: DOT_SOURCE_ID,
+        filter: ['==', ['get', 'areaType'], 'garden'],
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#d97706',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+        },
+      });
     }
   }, []);
 
@@ -329,10 +362,8 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     // Position labels with collision detection
     const positioned = positionLabelsWithGrid(boxes, targetCanvas.width, targetCanvas.height);
 
-    // Draw leader lines first (behind labels)
+    // Draw leader lines first (behind labels) — always shown for every label
     for (const box of positioned) {
-      if (!box.needsLeader) continue;
-
       const lineColor = box.type === 'lawn' ? '#22c55e' : '#d97706';
       const [startX, startY] = box.edgeMidpointPx!;
       const [endX, endY] = box.finalPosition!;
