@@ -483,6 +483,19 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     if (!mapRef.current) return null;
 
     const map = mapRef.current;
+
+    // Hide leader lines, dots, and draw control points from the WebGL canvas before capture
+    const layersToHide = [
+      LEADER_LAYER_LAWN, LEADER_LAYER_GARDEN, DOT_LAYER_LAWN, DOT_LAYER_GARDEN,
+      'gl-draw-point', 'gl-draw-point-midpoint', 'gl-draw-line',
+    ];
+    for (const id of layersToHide) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
+    }
+    // Force a synchronous re-render so the WebGL canvas reflects hidden layers
+    map.triggerRepaint();
+    map.redraw();
+
     const mapCanvas = map.getCanvas();
 
     // Create a temporary 2D canvas
@@ -491,13 +504,24 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     tempCanvas.height = mapCanvas.height;
 
     const ctx = tempCanvas.getContext("2d");
-    if (!ctx) return null;
+    if (!ctx) {
+      // Restore layers before returning
+      for (const id of layersToHide) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+      }
+      return null;
+    }
 
     // Copy the WebGL canvas to the 2D canvas
     ctx.drawImage(mapCanvas, 0, 0);
 
-    // Annotate the 2D canvas
+    // Annotate the 2D canvas (scale bar only)
     annotateCanvas(tempCanvas, ctx);
+
+    // Restore leader lines and dots on the live map
+    for (const id of layersToHide) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
+    }
 
     // Capture the annotated canvas
     return tempCanvas.toDataURL("image/png");
