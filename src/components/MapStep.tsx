@@ -3,6 +3,21 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Map as MapboxMap, NavigationControl, IControl } from "mapbox-gl";
 import { WizardData } from "@/lib/types";
+import { calcDistance, calcArea } from "@/lib/geo";
+import {
+  type LabelBox,
+  boxesOverlap,
+  positionLabelsWithGrid,
+  radialSpreadCluster,
+  formatDistanceLabel,
+  LABEL_FONT_SIZE,
+  LABEL_PADDING_X,
+  LABEL_PADDING_Y,
+  LABEL_CHAR_WIDTH_RATIO,
+} from "@/lib/labelCollision";
+
+// Re-export for backward compatibility (tests import from MapStep)
+export { type LabelBox, boxesOverlap, positionLabelsWithGrid, radialSpreadCluster } from "@/lib/labelCollision";
 
 /* global mapboxgl, MapboxDraw */
 declare const mapboxgl: typeof import("mapbox-gl").default;
@@ -10,20 +25,6 @@ declare const mapboxgl: typeof import("mapbox-gl").default;
 declare const MapboxDraw: any;
 
 type DrawingMode = "lawn" | "garden" | null;
-
-export interface LabelBox {
-  id: string;                     // unique identifier (edge index + polygon id)
-  x: number;                      // center X position (px or canvas coords)
-  y: number;                      // center Y position (px or canvas coords)
-  width: number;                  // label width in pixels
-  height: number;                 // label height in pixels
-  edgeMidpoint: [number, number]; // original [lng, lat] or [x, y]
-  edgeMidpointPx: [number, number]; // edge midpoint in pixel coords
-  distance: number;               // the measurement value (e.g., 13.5)
-  type: 'lawn' | 'garden';
-  finalPosition?: [number, number]; // set after collision resolution
-  needsLeader?: boolean;          // true if moved from midpoint
-}
 
 interface MapStepProps {
   data: WizardData;
@@ -568,59 +569,6 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   );
 }
 
-function calcArea(feature: { geometry?: { type?: string; coordinates?: number[][][] } }): number {
-  if (!feature.geometry || feature.geometry.type !== "Polygon" || !feature.geometry.coordinates) {
-    return 0;
-  }
-  const coords = feature.geometry.coordinates[0];
-  if (!coords || coords.length < 4) return 0;
-
-  const RAD = Math.PI / 180;
-  const EARTH_RADIUS = 6371008.8;
-
-  let total = 0;
-  for (let i = 0; i < coords.length - 1; i++) {
-    const [lng1, lat1] = coords[i];
-    const [lng2, lat2] = coords[i + 1];
-    total += (lng2 - lng1) * RAD * (2 + Math.sin(lat1 * RAD) + Math.sin(lat2 * RAD));
-  }
-  total = Math.abs(total * EARTH_RADIUS * EARTH_RADIUS / 2);
-  return total;
-}
-
-function calcDistanceLocal(a: [number, number], b: [number, number]): number {
-  const RAD = Math.PI / 180;
-  const EARTH_RADIUS = 6371008.8;
-  const dLat = (b[1] - a[1]) * RAD;
-  const dLng = (b[0] - a[0]) * RAD;
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-  const h = sinLat * sinLat + Math.cos(a[1] * RAD) * Math.cos(b[1] * RAD) * sinLng * sinLng;
-  return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(h));
-}
-
-// Label rendering constants
-const LABEL_FONT_SIZE = 11;
-const LABEL_PADDING_X = 6;  // Horizontal padding in pixels
-const LABEL_PADDING_Y = 3;  // Vertical padding in pixels
-const LABEL_CHAR_WIDTH_RATIO = 0.6; // Rough estimate for character width
-
-function formatDistanceLabel(dist: number): string {
-  return dist < 10 ? `${dist.toFixed(1)}m` : `${Math.round(dist)}m`;
-}
-
-type BoundingBox = Pick<LabelBox, 'x' | 'y' | 'width' | 'height'>;
-
-export function boxesOverlap(a: BoundingBox, b: BoundingBox): boolean {
-  const padding = 8; // 8px minimum gap between labels
-  return !(
-    a.x + a.width / 2 + padding < b.x - b.width / 2 ||
-    a.x - a.width / 2 - padding > b.x + b.width / 2 ||
-    a.y + a.height / 2 + padding < b.y - b.height / 2 ||
-    a.y - a.height / 2 - padding > b.y + b.height / 2
-  );
-}
-
 function calculateLabelBoxes(
   map: MapboxMap,
   draw: InstanceType<typeof MapboxDraw>,
@@ -639,7 +587,7 @@ function calculateLabelBoxes(
     if (!coords || coords.length < 4) continue;
 
     for (let i = 0; i < coords.length - 1; i++) {
-      const dist = calcDistanceLocal(coords[i], coords[i + 1]);
+      const dist = calcDistance(coords[i], coords[i + 1]);
       if (dist < 0.5) continue; // Skip tiny edges
 
       const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
@@ -673,127 +621,3 @@ function calculateLabelBoxes(
   return boxes;
 }
 
-export function positionLabelsWithGrid(
-  boxes: LabelBox[],
-  canvasWidth: number,
-  canvasHeight: number
-): LabelBox[] {
-  // Sort by priority: longest edges first, lawn before garden
-  const sortedBoxes = [...boxes].sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'lawn' ? -1 : 1;
-    return b.distance - a.distance; // Descending
-  });
-
-  const positioned: LabelBox[] = [];
-  const offset = 40; // pixels
-
-  // 8 directions: N, NE, E, SE, S, SW, W, NW
-  const directions: Array<[number, number]> = [
-    [0, -offset],      // N
-    [offset, -offset], // NE
-    [offset, 0],       // E
-    [offset, offset],  // SE
-    [0, offset],       // S
-    [-offset, offset], // SW
-    [-offset, 0],      // W
-    [-offset, -offset] // NW
-  ];
-
-  for (const box of sortedBoxes) {
-    let placed = false;
-    const [origX, origY] = box.edgeMidpointPx!;
-
-    // Try original position first
-    box.x = origX;
-    box.y = origY;
-    box.finalPosition = [origX, origY];
-    box.needsLeader = false;
-
-    if (!positioned.some(p => boxesOverlap(box, p))) {
-      positioned.push(box);
-      continue;
-    }
-
-    // Try 8 grid positions
-    for (const [dx, dy] of directions) {
-      box.x = origX + dx;
-      box.y = origY + dy;
-      box.finalPosition = [box.x, box.y];
-      box.needsLeader = true;
-
-      // Check canvas bounds
-      const left = box.x - box.width / 2;
-      const right = box.x + box.width / 2;
-      const top = box.y - box.height / 2;
-      const bottom = box.y + box.height / 2;
-
-      if (left < 0 || right > canvasWidth || top < 0 || bottom > canvasHeight) {
-        continue; // Out of bounds
-      }
-
-      if (!positioned.some(p => boxesOverlap(box, p))) {
-        positioned.push(box);
-        placed = true;
-        break;
-      }
-    }
-
-    if (!placed) {
-      // Collect all overlapping labels into a cluster
-      const overlapping = positioned.filter(p => boxesOverlap(box, p));
-
-      if (overlapping.length >= 3) {
-        // Form a cluster with this box and overlapping boxes
-        const cluster = [...overlapping, box];
-
-        // Calculate centroid
-        const centroidX = cluster.reduce((sum, b) => sum + b.edgeMidpointPx![0], 0) / cluster.length;
-        const centroidY = cluster.reduce((sum, b) => sum + b.edgeMidpointPx![1], 0) / cluster.length;
-
-        // Apply radial spread
-        radialSpreadCluster(cluster, [centroidX, centroidY], canvasWidth, canvasHeight);
-        positioned.push(box);
-        placed = true;
-      }
-    }
-
-    if (!placed) {
-      // Still couldn't place - keep at original position
-      box.x = origX;
-      box.y = origY;
-      box.finalPosition = [origX, origY];
-      box.needsLeader = false;
-      positioned.push(box);
-    }
-  }
-
-  return positioned;
-}
-
-export function radialSpreadCluster(
-  cluster: LabelBox[],
-  centroid: [number, number],
-  canvasWidth: number,
-  canvasHeight: number
-): void {
-  const clusterSize = cluster.length;
-  const radius = 60 + clusterSize * 10; // Dynamic radius based on cluster size
-  const angleStep = (2 * Math.PI) / clusterSize;
-
-  cluster.forEach((box, index) => {
-    const angle = index * angleStep;
-    let x = centroid[0] + radius * Math.cos(angle);
-    let y = centroid[1] + radius * Math.sin(angle);
-
-    // Clamp to canvas bounds
-    const halfW = box.width / 2;
-    const halfH = box.height / 2;
-    x = Math.max(halfW, Math.min(canvasWidth - halfW, x));
-    y = Math.max(halfH, Math.min(canvasHeight - halfH, y));
-
-    box.x = x;
-    box.y = y;
-    box.finalPosition = [x, y];
-    box.needsLeader = true;
-  });
-}

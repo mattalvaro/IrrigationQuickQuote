@@ -1,6 +1,13 @@
 import { WizardData } from "@/lib/types";
 import { calculateQuote, getDefaultConfig } from "@/lib/pricing";
 
+const formatter = new Intl.NumberFormat("en-AU", {
+  style: "currency",
+  currency: "AUD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
 interface EstimateStepProps {
   data: WizardData;
 }
@@ -21,13 +28,6 @@ export function EstimateStep({ data }: EstimateStepProps) {
     },
     getDefaultConfig()
   );
-
-  const formatter = new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
 
   return (
     <div className="space-y-6">
