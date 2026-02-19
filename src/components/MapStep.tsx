@@ -3,17 +3,7 @@
 import { useEffect, useRef, useState, useCallback, type RefObject } from "react";
 import type { Map as MapboxMap, NavigationControl, IControl } from "mapbox-gl";
 import { WizardData } from "@/lib/types";
-import { calcDistance, calcArea } from "@/lib/geo";
-import {
-  type LabelBox,
-  positionLabelsWithGrid,
-  formatDistanceLabel,
-  LABEL_FONT_SIZE,
-  LABEL_PADDING_X,
-  LABEL_PADDING_Y,
-  LABEL_CHAR_WIDTH_RATIO,
-} from "@/lib/labelCollision";
-
+import { calcArea } from "@/lib/geo";
 // Re-export for backward compatibility (tests import from MapStep)
 export { type LabelBox, boxesOverlap, positionLabelsWithGrid, radialSpreadCluster } from "@/lib/labelCollision";
 
@@ -42,7 +32,6 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
 
   const featureTypes = useRef<Map<string, "lawn" | "garden">>(new Map());
   const drawingModeRef = useRef<DrawingMode>(null);
-  const edgeMarkersRef = useRef<Array<any>>([]);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -51,150 +40,6 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
 
   const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
   const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
-
-  const LEADER_SOURCE_ID = 'edge-leader-lines';
-  const LEADER_LAYER_LAWN = 'edge-leader-layer-lawn';
-  const LEADER_LAYER_GARDEN = 'edge-leader-layer-garden';
-  const DOT_SOURCE_ID = 'edge-leader-dots';
-  const DOT_LAYER_LAWN = 'edge-dot-layer-lawn';
-  const DOT_LAYER_GARDEN = 'edge-dot-layer-garden';
-
-  const updateEdgeLabels = useCallback(() => {
-    const map = mapRef.current;
-    const draw = drawRef.current;
-    if (!map || !draw) return;
-
-    // Remove all existing label markers
-    edgeMarkersRef.current.forEach((marker) => marker.remove());
-    edgeMarkersRef.current = [];
-
-    // Calculate label boxes
-    const dpr = window.devicePixelRatio || 1;
-    const boxes = calculateLabelBoxes(map, draw, featureTypes.current, dpr);
-
-    // Position labels with collision detection (use CSS pixels, not device pixels)
-    const canvas = map.getCanvas();
-    const cssWidth = canvas.width / dpr;
-    const cssHeight = canvas.height / dpr;
-    const positioned = positionLabelsWithGrid(boxes, cssWidth, cssHeight);
-
-    // Build GeoJSON for leader lines and dots
-    const lineFeatures: GeoJSON.Feature[] = [];
-    const dotFeatures: GeoJSON.Feature[] = [];
-
-    for (const box of positioned) {
-      const [finalX, finalY] = box.finalPosition!;
-      const finalLngLat = map.unproject([finalX, finalY]);
-      const label = formatDistanceLabel(box.distance);
-      const [midLng, midLat] = box.edgeMidpoint;
-
-      // Create label marker
-      const labelEl = document.createElement('div');
-      labelEl.className = 'edge-label';
-      labelEl.style.cssText = `
-        color: #ffffff;
-        font-size: ${LABEL_FONT_SIZE}px;
-        font-weight: bold;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        white-space: nowrap;
-        pointer-events: none;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 6px rgba(0,0,0,0.5);
-      `;
-      labelEl.textContent = label;
-
-      const marker = new mapboxgl.Marker({ element: labelEl, anchor: 'center' })
-        .setLngLat(finalLngLat)
-        .addTo(map);
-      edgeMarkersRef.current.push(marker);
-
-      // Leader line from edge midpoint to label (GeoJSON)
-      lineFeatures.push({
-        type: 'Feature',
-        properties: { areaType: box.type },
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [midLng, midLat],
-            [finalLngLat.lng, finalLngLat.lat],
-          ],
-        },
-      });
-
-      // Dot at edge midpoint (GeoJSON)
-      dotFeatures.push({
-        type: 'Feature',
-        properties: { areaType: box.type },
-        geometry: {
-          type: 'Point',
-          coordinates: [midLng, midLat],
-        },
-      });
-    }
-
-    // Update or create leader line source/layers
-    const lineGeoJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: lineFeatures };
-    const dotGeoJSON: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: dotFeatures };
-
-    const lineSource = map.getSource(LEADER_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-    if (lineSource) {
-      lineSource.setData(lineGeoJSON);
-    } else {
-      map.addSource(LEADER_SOURCE_ID, { type: 'geojson', data: lineGeoJSON });
-      map.addLayer({
-        id: LEADER_LAYER_LAWN,
-        type: 'line',
-        source: LEADER_SOURCE_ID,
-        filter: ['==', ['get', 'areaType'], 'lawn'],
-        paint: {
-          'line-color': '#22c55e',
-          'line-width': 1.5,
-          'line-opacity': 0.8,
-        },
-      });
-      map.addLayer({
-        id: LEADER_LAYER_GARDEN,
-        type: 'line',
-        source: LEADER_SOURCE_ID,
-        filter: ['==', ['get', 'areaType'], 'garden'],
-        paint: {
-          'line-color': '#d97706',
-          'line-width': 1.5,
-          'line-opacity': 0.8,
-        },
-      });
-    }
-
-    const dotSource = map.getSource(DOT_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-    if (dotSource) {
-      dotSource.setData(dotGeoJSON);
-    } else {
-      map.addSource(DOT_SOURCE_ID, { type: 'geojson', data: dotGeoJSON });
-      map.addLayer({
-        id: DOT_LAYER_LAWN,
-        type: 'circle',
-        source: DOT_SOURCE_ID,
-        filter: ['==', ['get', 'areaType'], 'lawn'],
-        paint: {
-          'circle-radius': 4,
-          'circle-color': '#22c55e',
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1.5,
-        },
-      });
-      map.addLayer({
-        id: DOT_LAYER_GARDEN,
-        type: 'circle',
-        source: DOT_SOURCE_ID,
-        filter: ['==', ['get', 'areaType'], 'garden'],
-        paint: {
-          'circle-radius': 4,
-          'circle-color': '#d97706',
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1.5,
-        },
-      });
-    }
-  }, []);
 
   const updateAreas = useCallback(() => {
     if (!drawRef.current) return;
@@ -212,8 +57,7 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     }
 
     onUpdate({ lawnAreas, gardenAreas });
-    updateEdgeLabels();
-  }, [onUpdate, updateEdgeLabels]);
+  }, [onUpdate]);
 
   const [scriptReady, setScriptReady] = useState(false);
 
@@ -323,9 +167,6 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
     map.addControl(draw as unknown as IControl, "top-left");
-
-    // Re-render edge labels after pan/zoom so leader lines stay correct
-    map.on("moveend", () => updateEdgeLabels());
 
     map.on("draw.create", (e: { features: Array<{ id: string }> }) => {
       const currentMode = drawingModeRef.current;
@@ -482,47 +323,18 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
   function captureSnapshot(): string | null {
     if (!mapRef.current) return null;
 
-    const map = mapRef.current;
+    const mapCanvas = mapRef.current.getCanvas();
 
-    // Hide leader lines, dots, and draw control points from the WebGL canvas before capture
-    const layersToHide = [
-      LEADER_LAYER_LAWN, LEADER_LAYER_GARDEN, DOT_LAYER_LAWN, DOT_LAYER_GARDEN,
-      'gl-draw-point', 'gl-draw-point-midpoint', 'gl-draw-line',
-    ];
-    for (const id of layersToHide) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
-    }
-    // Force a synchronous re-render so the WebGL canvas reflects hidden layers
-    map.triggerRepaint();
-
-    const mapCanvas = map.getCanvas();
-
-    // Create a temporary 2D canvas
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = mapCanvas.width;
     tempCanvas.height = mapCanvas.height;
 
     const ctx = tempCanvas.getContext("2d");
-    if (!ctx) {
-      // Restore layers before returning
-      for (const id of layersToHide) {
-        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
-      }
-      return null;
-    }
+    if (!ctx) return null;
 
-    // Copy the WebGL canvas to the 2D canvas
     ctx.drawImage(mapCanvas, 0, 0);
-
-    // Annotate the 2D canvas (scale bar only)
     annotateCanvas(tempCanvas, ctx);
 
-    // Restore leader lines and dots on the live map
-    for (const id of layersToHide) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'visible');
-    }
-
-    // Capture the annotated canvas
     return tempCanvas.toDataURL("image/png");
   }
 
@@ -533,14 +345,6 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
       return () => { snapshotRef.current = null; };
     }
   }, [snapshotRef]);
-
-  // Cleanup edge markers on unmount
-  useEffect(() => {
-    return () => {
-      edgeMarkersRef.current.forEach((marker) => marker.remove());
-      edgeMarkersRef.current = [];
-    };
-  }, []);
 
   return (
     <div className="space-y-5">
@@ -681,88 +485,4 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
   );
 }
 
-function calculateLabelBoxes(
-  map: MapboxMap,
-  draw: InstanceType<typeof MapboxDraw>,
-  featureTypes: Map<string, 'lawn' | 'garden'>,
-  dpr: number
-): LabelBox[] {
-  const allFeatures = draw.getAll();
-  const boxes: LabelBox[] = [];
-
-  for (const feature of allFeatures.features) {
-    const id = feature.id as string;
-    const type = featureTypes.get(id);
-    if (!type || !feature.geometry || feature.geometry.type !== 'Polygon') continue;
-
-    const coords = feature.geometry.coordinates[0] as [number, number][];
-    if (!coords || coords.length < 4) continue;
-
-    // Compute polygon centroid in pixel coords for outward direction
-    const verticesPx = coords.slice(0, -1).map(c => map.project(c as [number, number]));
-    const centroidPx = {
-      x: verticesPx.reduce((sum, p) => sum + p.x, 0) / verticesPx.length,
-      y: verticesPx.reduce((sum, p) => sum + p.y, 0) / verticesPx.length,
-    };
-
-    const OUTWARD_OFFSET = 20;
-
-    for (let i = 0; i < coords.length - 1; i++) {
-      const dist = calcDistance(coords[i], coords[i + 1]);
-      if (dist < 0.5) continue; // Skip tiny edges
-
-      const midLng = (coords[i][0] + coords[i + 1][0]) / 2;
-      const midLat = (coords[i][1] + coords[i + 1][1]) / 2;
-      const label = formatDistanceLabel(dist);
-
-      // Calculate pixel position
-      const midPx = map.project([midLng, midLat] as [number, number]);
-
-      // Compute outward perpendicular normal for this edge
-      const aPx = verticesPx[i];
-      const bPx = verticesPx[(i + 1) % verticesPx.length];
-      let nx = -(bPx.y - aPx.y);
-      let ny = bPx.x - aPx.x;
-      const nLen = Math.sqrt(nx * nx + ny * ny);
-      if (nLen > 0) {
-        nx /= nLen;
-        ny /= nLen;
-      }
-
-      // Flip normal to point away from centroid (outward)
-      const toCentroidX = centroidPx.x - midPx.x;
-      const toCentroidY = centroidPx.y - midPx.y;
-      if (nx * toCentroidX + ny * toCentroidY > 0) {
-        nx = -nx;
-        ny = -ny;
-      }
-
-      // Offset label position outward from the edge midpoint
-      const offsetX = midPx.x + nx * OUTWARD_OFFSET;
-      const offsetY = midPx.y + ny * OUTWARD_OFFSET;
-
-      // Estimate label dimensions (rough approximation; actual width from measureText may differ)
-      const fontSize = LABEL_FONT_SIZE * dpr;
-      const estimatedWidth = (label.length * fontSize * LABEL_CHAR_WIDTH_RATIO + LABEL_PADDING_X * 2 * dpr) / dpr;
-      const estimatedHeight = (fontSize + LABEL_PADDING_Y * 2 * dpr) / dpr;
-
-      boxes.push({
-        id: `${id}-edge-${i}`,
-        x: offsetX,
-        y: offsetY,
-        width: estimatedWidth,
-        height: estimatedHeight,
-        edgeMidpoint: [midLng, midLat],
-        edgeMidpointPx: [midPx.x, midPx.y],
-        distance: dist,
-        type,
-        finalPosition: [offsetX, offsetY],
-        needsLeader: true,
-        outwardDirection: [nx, ny],
-      });
-    }
-  }
-
-  return boxes;
-}
 
