@@ -116,7 +116,12 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  await appendLead(lead);
+  try {
+    await appendLead(lead);
+  } catch (err) {
+    // File storage may fail on serverless platforms (read-only filesystem)
+    console.warn("⚠️ Could not save lead to file:", (err as Error).message);
+  }
 
   // Send email notification (fire-and-forget, don't block response)
   const inputData = body.inputData;
