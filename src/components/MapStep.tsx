@@ -90,24 +90,17 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
       const label = formatDistanceLabel(box.distance);
       const [midLng, midLat] = box.edgeMidpoint;
 
-      const bgColor = box.type === 'lawn'
-        ? 'rgba(34, 197, 94, 0.85)'
-        : 'rgba(217, 119, 6, 0.85)';
-
       // Create label marker
       const labelEl = document.createElement('div');
       labelEl.className = 'edge-label';
       labelEl.style.cssText = `
-        background: ${bgColor};
         color: #ffffff;
-        padding: ${LABEL_PADDING_Y}px ${LABEL_PADDING_X}px;
-        border-radius: 4px;
         font-size: ${LABEL_FONT_SIZE}px;
         font-weight: bold;
         font-family: 'Plus Jakarta Sans', sans-serif;
         white-space: nowrap;
         pointer-events: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 6px rgba(0,0,0,0.5);
       `;
       labelEl.textContent = label;
 
@@ -462,41 +455,30 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
       targetCtx.stroke();
     }
 
-    // Draw labels on top
+    // Draw labels on top — white bold text with shadow (no background)
     for (const box of positioned) {
       const [x, y] = box.finalPosition!;
       const label = formatDistanceLabel(box.distance);
 
-      const bgColor = box.type === 'lawn'
-        ? 'rgba(34, 197, 94, 0.85)'
-        : 'rgba(217, 119, 6, 0.85)';
-
       const fontSize = LABEL_FONT_SIZE * dpr;
       targetCtx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-      const textWidth = targetCtx.measureText(label).width;
-      const padX = LABEL_PADDING_X * dpr;
-      const padY = LABEL_PADDING_Y * dpr;
-      const pillW = textWidth + padX * 2;
-      const pillH = fontSize + padY * 2;
-      const radius = 4 * dpr;
-
-      // Draw pill background
-      targetCtx.fillStyle = bgColor;
-      targetCtx.beginPath();
-      targetCtx.roundRect(
-        x * dpr - pillW / 2,
-        y * dpr - pillH / 2,
-        pillW,
-        pillH,
-        radius
-      );
-      targetCtx.fill();
-
-      // Draw text
-      targetCtx.fillStyle = '#ffffff';
       targetCtx.textAlign = 'center';
       targetCtx.textBaseline = 'middle';
+
+      // Text shadow for readability on satellite imagery
+      targetCtx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+      targetCtx.shadowBlur = 4 * dpr;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 1 * dpr;
+
+      targetCtx.fillStyle = '#ffffff';
       targetCtx.fillText(label, x * dpr, y * dpr);
+
+      // Reset shadow
+      targetCtx.shadowColor = 'transparent';
+      targetCtx.shadowBlur = 0;
+      targetCtx.shadowOffsetX = 0;
+      targetCtx.shadowOffsetY = 0;
     }
   }
 
