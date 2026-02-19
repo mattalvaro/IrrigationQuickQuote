@@ -151,40 +151,33 @@ export async function POST(request: NextRequest) {
     total: quote.total,
   };
 
-  console.log("📧 Attempting to send lead email...");
-  console.log("  To:", process.env.LEAD_NOTIFY_EMAIL);
-  console.log("  Map snapshot:", lead.mapSnapshot ? `${lead.mapSnapshot.substring(0, 50)}...` : "null");
-
-  sendLeadEmail(
-    {
-      name: lead.name,
-      email: lead.email,
-      phone: lead.phone,
-      address: inputData.address || "Address not provided",
-      lawnArea,
-      gardenArea,
-      pavementArea: 0, // Not tracked in current wizard
-      otherArea: 0, // Not tracked in current wizard
-      quote: emailQuote,
-      selections: {
-        lawnSprinklerType: inputData.lawnSprinklerType,
-        gardenSprinklerType: inputData.gardenSprinklerType,
-        lawnNozzleType: inputData.lawnNozzleType,
-        gardenNozzleType: inputData.gardenNozzleType,
-        controllerType: inputData.controllerType,
+  // Send email notification — await so Vercel doesn't kill the function before it completes
+  try {
+    await sendLeadEmail(
+      {
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        address: inputData.address || "Address not provided",
+        lawnArea,
+        gardenArea,
+        pavementArea: 0, // Not tracked in current wizard
+        otherArea: 0, // Not tracked in current wizard
+        quote: emailQuote,
+        selections: {
+          lawnSprinklerType: inputData.lawnSprinklerType,
+          gardenSprinklerType: inputData.gardenSprinklerType,
+          lawnNozzleType: inputData.lawnNozzleType,
+          gardenNozzleType: inputData.gardenNozzleType,
+          controllerType: inputData.controllerType,
+        },
       },
-    },
-    lead.mapSnapshot
-  )
-    .then(() => {
-      console.log("✅ Lead email sent successfully!");
-    })
-    .catch((error) => {
-      // Log error but don't fail the request
-      console.error("❌ Failed to send lead email:");
-      console.error("  Error message:", error.message);
-      console.error("  Full error:", error);
-    });
+      lead.mapSnapshot
+    );
+  } catch (error) {
+    // Log but don't fail the lead submission
+    console.error("❌ Failed to send lead email:", (error as Error).message);
+  }
 
   return NextResponse.json({ id: lead.id }, { status: 201 });
 }
