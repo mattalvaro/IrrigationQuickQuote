@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 
-const PASSWORD = process.env.SITE_PASSWORD || "nutrienwater2024";
+const PASSWORD = process.env.SITE_PASSWORD;
 
 export async function POST(request: NextRequest) {
+  if (!PASSWORD) {
+    return NextResponse.json({ error: "Password not configured" }, { status: 500 });
+  }
+
   const { password } = await request.json();
 
   if (password === PASSWORD) {
+    const token = crypto.createHmac("sha256", PASSWORD).update("authenticated").digest("hex");
     const response = NextResponse.json({ success: true });
-    response.cookies.set("site-auth", "true", {
+    response.cookies.set("site-auth", token, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

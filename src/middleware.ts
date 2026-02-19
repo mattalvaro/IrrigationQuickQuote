@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PASSWORD = process.env.SITE_PASSWORD || "nutrienwater2024";
+const PASSWORD = process.env.SITE_PASSWORD;
 
-export function middleware(request: NextRequest) {
-  const isAuthenticated = request.cookies.get("site-auth")?.value === "true";
+// Pre-compute the auth token at module load using Web Crypto API compatible approach
+// Edge Runtime doesn't support Node.js crypto, so we use a simple hash
+async function computeAuthToken(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode("authenticated"));
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function middleware(request: NextRequest) {
+  // If no password is configured, allow access (dev convenience — set SITE_PASSWORD in production)
+  if (!PASSWORD) {
+    return NextResponse.next();
+  }
+
+  const expectedToken = await computeAuthToken(PASSWORD);
+  const isAuthenticated = request.cookies.get("site-auth")?.value === expectedToken;
 
   // Allow the password API route through
   if (request.nextUrl.pathname === "/api/password") {

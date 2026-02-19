@@ -43,6 +43,7 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
   const featureTypes = useRef<Map<string, "lawn" | "garden">>(new Map());
   const drawingModeRef = useRef<DrawingMode>(null);
   const edgeMarkersRef = useRef<Array<any>>([]);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     drawingModeRef.current = drawingMode;
@@ -247,31 +248,34 @@ export function MapStep({ data, onUpdate }: MapStepProps) {
     return () => map.remove();
   }, [updateAreas, scriptReady]);
 
-  async function searchAddress(query: string) {
+  function searchAddress(query: string) {
     setAddress(query);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (query.length < 3) {
       setSuggestions([]);
       return;
     }
-    try {
-      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=au&limit=5&types=address,place`
-      );
-      if (!res.ok) {
-        console.error("Mapbox geocoding failed:", res.status, await res.text());
-        return;
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=au&limit=5&types=address,place`
+        );
+        if (!res.ok) {
+          console.error("Mapbox geocoding failed:", res.status, await res.text());
+          return;
+        }
+        const json = await res.json();
+        setSuggestions(
+          (json.features || []).map((f: { place_name: string; center: [number, number] }) => ({
+            place_name: f.place_name,
+            center: f.center,
+          }))
+        );
+      } catch (err) {
+        console.error("Mapbox geocoding error:", err);
       }
-      const json = await res.json();
-      setSuggestions(
-        (json.features || []).map((f: { place_name: string; center: [number, number] }) => ({
-          place_name: f.place_name,
-          center: f.center,
-        }))
-      );
-    } catch (err) {
-      console.error("Mapbox geocoding error:", err);
-    }
+    }, 350);
   }
 
   function selectAddress(center: [number, number], placeName: string) {

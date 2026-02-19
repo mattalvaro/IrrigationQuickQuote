@@ -39,6 +39,8 @@ export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0);
   const [data, setData] = useState<WizardData>(initialWizardData);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
   const [animKey, setAnimKey] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -82,33 +84,49 @@ export function Wizard() {
   }, []);
 
   async function handleSubmit() {
-    const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
-    const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
 
-    await fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        estimate: {
-          totalLawn,
-          totalGarden,
-          lawnSprinklerType: data.lawnSprinklerType,
-          gardenSprinklerType: data.gardenSprinklerType,
-          lawnNozzleType: data.lawnNozzleType,
-          gardenNozzleType: data.gardenNozzleType,
-          controllerType: data.controllerType,
-          waterSource: data.waterSource,
-          connectionType: data.connectionType,
-        },
-        inputData: data,
-        mapSnapshot: data.mapSnapshot,
-      }),
-    });
+    try {
+      const totalLawn = data.lawnAreas.reduce((sum, a) => sum + a.sqm, 0);
+      const totalGarden = data.gardenAreas.reduce((sum, a) => sum + a.sqm, 0);
 
-    setSubmitted(true);
+      const { mapSnapshot, ...inputDataWithoutSnapshot } = data;
+
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          estimate: {
+            totalLawn,
+            totalGarden,
+            lawnSprinklerType: data.lawnSprinklerType,
+            gardenSprinklerType: data.gardenSprinklerType,
+            lawnNozzleType: data.lawnNozzleType,
+            gardenNozzleType: data.gardenNozzleType,
+            controllerType: data.controllerType,
+            waterSource: data.waterSource,
+            connectionType: data.connectionType,
+          },
+          inputData: inputDataWithoutSnapshot,
+          mapSnapshot: mapSnapshot,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to submit");
+      }
+
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   // Scroll to top on step change
@@ -229,7 +247,7 @@ export function Wizard() {
             {currentStep === "details" && <DetailsStep data={data} onUpdate={updateData} />}
             {currentStep === "estimate" && <EstimateStep data={data} />}
             {currentStep === "lead" && !submitted && (
-              <LeadCaptureStep data={data} onUpdate={updateData} onSubmit={handleSubmit} />
+              <LeadCaptureStep data={data} onUpdate={updateData} onSubmit={handleSubmit} submitting={submitting} error={submitError} />
             )}
             {currentStep === "lead" && submitted && <SuccessStep />}
           </div>

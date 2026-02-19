@@ -7,6 +7,42 @@ import type { QuoteInput } from "@/lib/pricing";
 
 const LEADS_FILE = path.join(process.cwd(), "data", "leads.json");
 
+// Simple in-memory rate limiter: max 5 requests per IP per minute
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
+function validateLeadInput(body: Record<string, unknown>): string | null {
+  if (!body || typeof body !== "object") return "Invalid request body";
+
+  const { name, email, phone } = body;
+
+  if (!name || typeof name !== "string" || name.trim().length === 0) return "Name is required";
+  if (name.length > 200) return "Name is too long";
+
+  if (!email || typeof email !== "string") return "Email is required";
+  if (email.length > 254) return "Email is too long";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Invalid email format";
+
+  if (!phone || typeof phone !== "string") return "Phone is required";
+  if (phone.length > 30) return "Phone is too long";
+
+  return null;
+}
+
 interface Lead {
   id: string;
   name: string;
@@ -17,6 +53,9 @@ interface Lead {
   mapSnapshot: string | null;
   createdAt: string;
 }
+
+// Simple async mutex to prevent concurrent read-modify-write races
+let writeLock: Promise<void> = Promise.resolve();
 
 async function readLeads(): Promise<Lead[]> {
   try {
@@ -30,11 +69,41 @@ async function readLeads(): Promise<Lead[]> {
 async function writeLeads(leads: Lead[]): Promise<void> {
   const dir = path.dirname(LEADS_FILE);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(LEADS_FILE, JSON.stringify(leads, null, 2));
+  // Atomic write: write to temp file then rename to prevent corruption
+  const tmpFile = `${LEADS_FILE}.tmp`;
+  await fs.writeFile(tmpFile, JSON.stringify(leads, null, 2));
+  await fs.rename(tmpFile, LEADS_FILE);
+}
+
+async function appendLead(lead: Lead): Promise<void> {
+  // Serialize access so concurrent requests don't overwrite each other
+  const previous = writeLock;
+  let resolve: () => void;
+  writeLock = new Promise<void>((r) => { resolve = r; });
+  await previous;
+  try {
+    const leads = await readLeads();
+    leads.push(lead);
+    await writeLeads(leads);
+  } finally {
+    resolve!();
+  }
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   const body = await request.json();
+
+  // Input validation
+  const validationError = validateLeadInput(body);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
+  }
 
   const lead: Lead = {
     id: crypto.randomUUID(),
@@ -47,9 +116,7 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  const leads = await readLeads();
-  leads.push(lead);
-  await writeLeads(leads);
+  await appendLead(lead);
 
   // Send email notification (fire-and-forget, don't block response)
   const inputData = body.inputData;

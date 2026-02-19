@@ -4,9 +4,11 @@ interface LeadCaptureStepProps {
   data: WizardData;
   onUpdate: (partial: Partial<WizardData>) => void;
   onSubmit: () => void;
+  submitting?: boolean;
+  error?: string | null;
 }
 
-export function LeadCaptureStep({ data, onUpdate, onSubmit }: LeadCaptureStepProps) {
+export function LeadCaptureStep({ data, onUpdate, onSubmit, submitting, error }: LeadCaptureStepProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit();
@@ -63,12 +65,18 @@ export function LeadCaptureStep({ data, onUpdate, onSubmit }: LeadCaptureStepPro
         </div>
       </div>
 
-      <button type="submit" className="btn-primary w-full py-3.5 text-base">
+      {error && (
+        <p className="text-sm text-red-600 text-center">{error}</p>
+      )}
+
+      <button type="submit" disabled={submitting} className="btn-primary w-full py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed">
         <span className="flex items-center justify-center gap-2">
-          Get My Estimate
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-          </svg>
+          {submitting ? "Submitting..." : "Get My Estimate"}
+          {!submitting && (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+          )}
         </span>
       </button>
     </form>

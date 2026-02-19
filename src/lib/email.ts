@@ -22,6 +22,15 @@ export interface LeadEmailData {
   };
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const formatAUD = (amount: number): string => {
   return new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -69,23 +78,23 @@ export function buildLeadEmailHtml(data: LeadEmailData): string {
               <table role="presentation" style="width: 100%;">
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Name:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; font-weight: 500;">${data.name}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; font-weight: 500;">${escapeHtml(data.name)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Email:</td>
                   <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px;">
-                    <a href="mailto:${data.email}" style="color: #2e7d32; text-decoration: none;">${data.email}</a>
+                    <a href="mailto:${escapeHtml(data.email)}" style="color: #2e7d32; text-decoration: none;">${escapeHtml(data.email)}</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Phone:</td>
                   <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px;">
-                    <a href="tel:${data.phone}" style="color: #2e7d32; text-decoration: none;">${data.phone}</a>
+                    <a href="tel:${escapeHtml(data.phone)}" style="color: #2e7d32; text-decoration: none;">${escapeHtml(data.phone)}</a>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Address:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px;">${data.address}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px;">${escapeHtml(data.address)}</td>
                 </tr>
               </table>
             </td>
@@ -139,7 +148,7 @@ export function buildLeadEmailHtml(data: LeadEmailData): string {
               <table role="presentation" style="width: 100%;">
                 ${data.quote.lineItems.map(item => `
                 <tr>
-                  <td style="padding: 8px 0; color: #666666; font-size: 14px;">${item.description}</td>
+                  <td style="padding: 8px 0; color: #666666; font-size: 14px;">${escapeHtml(item.description)}</td>
                   <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${formatAUD(item.amount)}</td>
                 </tr>
                 `).join('')}
@@ -161,31 +170,31 @@ export function buildLeadEmailHtml(data: LeadEmailData): string {
                 ${data.selections.lawnSprinklerType ? `
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Lawn Sprinkler Type:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${data.selections.lawnSprinklerType}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${escapeHtml(data.selections.lawnSprinklerType)}</td>
                 </tr>
                 ` : ''}
                 ${data.selections.gardenSprinklerType ? `
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Garden Sprinkler Type:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${data.selections.gardenSprinklerType}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${escapeHtml(data.selections.gardenSprinklerType)}</td>
                 </tr>
                 ` : ''}
                 ${data.selections.lawnNozzleType ? `
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Lawn Nozzle Type:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${data.selections.lawnNozzleType}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${escapeHtml(data.selections.lawnNozzleType)}</td>
                 </tr>
                 ` : ''}
                 ${data.selections.gardenNozzleType ? `
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Garden Nozzle Type:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${data.selections.gardenNozzleType}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${escapeHtml(data.selections.gardenNozzleType)}</td>
                 </tr>
                 ` : ''}
                 ${data.selections.controllerType ? `
                 <tr>
                   <td style="padding: 8px 0; color: #666666; font-size: 14px;">Controller Type:</td>
-                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${data.selections.controllerType}</td>
+                  <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${escapeHtml(data.selections.controllerType)}</td>
                 </tr>
                 ` : ''}
               </table>
