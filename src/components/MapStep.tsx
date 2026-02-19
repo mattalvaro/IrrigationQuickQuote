@@ -494,7 +494,6 @@ export function MapStep({ data, onUpdate, snapshotRef }: MapStepProps) {
     }
     // Force a synchronous re-render so the WebGL canvas reflects hidden layers
     map.triggerRepaint();
-    map.redraw();
 
     const mapCanvas = map.getCanvas();
 
